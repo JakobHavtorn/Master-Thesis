@@ -1,0 +1,62 @@
+\newcommand{\empt}[2]{$#1^{\langle #2 \rangle}$}
+\begin{tikzpicture}[
+    % GLOBAL CFG
+    font=\sffamily\scriptsize,
+    >=LaTeX,
+    % Styles
+    cell/.style={% For the main box
+        rectangle, 
+        rounded corners=5mm, 
+        draw,
+        very thick,
+        },
+    vector/.style={% For external inputs and outputs
+        circle,
+        draw,
+        line width = .75pt,
+        minimum width=1cm,
+        inner sep=1pt,
+        },
+    gate/.style={% For internal inputs
+        rectangle,
+        draw,
+        minimum width=4mm,
+        minimum height=3mm,
+        inner sep=1pt
+        },
+    mylabel/.style={% something new that I have learned
+        font=\scriptsize\sffamily
+        },
+    ArrowC1/.style={% Arrows with rounded corners
+        rounded corners=.25cm,
+        thick,
+        }
+    ]
+
+    % Cell
+    \node [cell, minimum height=4cm, minimum width=6cm] at (0,0){} ;
+    
+    % Inputs
+    \node[vector, label={[mylabel]Hidden}] (h) at (-4,1.5) {\empt{\h}{t-1}};
+    \node[vector, label={[mylabel]left:Input}] (x) at (-2.5,-3) {\empt{\x}{t}};
+    
+    % Outputs
+    \node[vector, label={[mylabel]Hidden}] (h2) at (4,1.5) {\empt{\h}{t}};
+    \node[vector, label={[mylabel]left:Hidden}] (h22) at (2.5,3) {\empt{\h}{t}};
+    
+    \node [gate, minimum width=1cm] (hiddengate) at (0,0) {tanh};
+
+    % Coordinates
+    \coordinate(hiddenbend) at (-2,1.5);
+    \coordinate(inputbend) at (-2.5,-1);
+    \coordinate(hxjoin) at (-2,-1);
+    \coordinate(bendbelowtanh) at (0,-1);
+    \coordinate(bendabovetanh) at (0,1.5);
+    \coordinate(hiddensplit) at (2.5,1.5);
+
+    % Arrows
+    \draw [ArrowC1] (h) -- (hiddenbend) -- (hxjoin) -- (bendbelowtanh) -- (hiddengate);
+    \draw [ArrowC1] (x) -- (inputbend) -- (hxjoin)--++(0.5,0);
+    \draw [ArrowC1] (hiddengate) -- (bendabovetanh) -- (h2);
+    \draw [ArrowC1] (hiddensplit)++(-0.5,0) -- (hiddensplit) -- (h22);
+\end{tikzpicture}
