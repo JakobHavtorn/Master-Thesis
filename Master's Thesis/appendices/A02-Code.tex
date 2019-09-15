@@ -1,0 +1,50 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Implementations}\label{app: implementations of algorithms}
+This appendix provides references to the programming code developed in this thesis and gives brief descriptions of the code.
+
+\section{Variational optimization}
+The implementations made of \gls{VO} for this thesis can be accessed at
+\begin{center}
+    \url{https://github.com/JakobHavtorn/es-rl}. 
+\end{center}
+This code is divided into different submodules (folders)
+\begin{itemize}
+    \item \texttt{data-analysis}: Several scripts for analyzing the experimental data of different experiments labelled by the template \texttt{EXXX-ABC} where \texttt{XXX} denotes the experiment number and \texttt{ABC} denotes some descriptive label or shorthand. All plots in the experimental section were created by these scripts and the associated data.
+    \item \texttt{es}: The main folder for algorithmic development. Has a set of python code files containing different parts of the code.
+        \begin{itemize}
+            \item \texttt{algorithms.py}: The main algorithmic development file. Contains each algorithm implemented as a class.
+                \begin{itemize}
+                    \item The abstract \texttt{Algorithm} base class is the parent class for all algorithms.
+                    \item The \texttt{StochasticGradientEstimation} class holds general methods for the algorithms that rely on stochastic gradient estimation, i.e. \gls{VO}.
+                    \item The \texttt{ES} class is the algorithm used in \cite{Salimans2017} with fixed $\sigma$ in an isotropic Gaussian search distribution.
+                    \item The \texttt{sES} uses a separable Gaussian search distribution with a variance either per parameter or per layer and has the ability to adapt the variance using \gls{VO}.
+                    \item A single variance can also be chosen corresponding to an isotropic Gaussian search distribution.
+                    \item \texttt{sES} also has a natural gradients version in \texttt{sNES}.
+                \end{itemize}
+            \item \texttt{envs.py}: Contains wrappers for the OpenAI Gym \gls{RL} environments. The only used wrapper is the \texttt{AtariPreProcessorMnih2015} class which performs the preprocessing defined in \autoref{sec: Experimental section: Preprocessing of Atari environments} in its \texttt{\_observation} method.
+            \item \texttt{eval\_funs.py}: Defines objective functions for the supervised, \texttt{supervised\_eval}, and \gls{RL}, \texttt{gym\_rollout}, settings. For the supervised setting, the a batch of examples are forward propagated and the \gls{NLL} loss is computed for the predictions. The \gls{RL} setting is evaluated by performing a single rollout of the policy encoded by the model. The file also contains methods for testing and a file for rendering the \gls{RL} environment for visualizing a learned policy.
+            \item \texttt{models.py}: Defines a series of \gls{NN} models using PyTorch. ALl models are subclasses of the \texttt{AbstractESModel} module.
+            The model used for supervised MNIST training is \texttt{MNISTNet} and its variations \texttt{MNISTNetDropout} and \texttt{MNISTNetNoBN}. For \gls{RL}, the \texttt{DQN} is used for Atari and \texttt{ClassicalControlFNN} for classical control problems such as CartPole.
+        \end{itemize}
+    \item \texttt{experiments}: Has the \texttt{main.py} file which is the entry point for all executed experiments. Also holds downloaded data as well as data from executed experiments (not included in repository due to size).
+    \item \texttt{hpc}: Contains scripts for setting up the used virtual environment on the DTU HPC cluster as well as scripts for submitting the experiment jobs.
+    \item \texttt{msc}: Contains a number of miscellaneous files such as examples and small experiments not directly related to \gls{VO} algorithms.
+    \item \texttt{tests}: Holds a couple of tests written for multiprocessing and sensitivity computation.
+    \item \texttt{utils}: Has several files defining some utlities used for plotting, data analysis, uploading to dropbox etc.
+\end{itemize}
+This code is relatively voluminous and is characterized by sequential experimentation and development over a long period of time. No claim is made that this code satisfies all standards for good software development, nor was this the goal of the code.
+
+\section{Neural network toolbox}
+The on-the-side neural network package can be accessed at
+\begin{center}
+    \url{https://github.com/JakobHavtorn/nn}.    
+\end{center}
+This code is also divided into different submodules (folders)
+\begin{itemize}
+    \item \texttt{examples}: This folder contains examples of code used to train different \glspl{NN} on data. The models are defined in \texttt{models.py}, the data from \texttt{torchvision}\footnote{\texttt{torchvision} is part of PyTorch and contains among other things datasets for computer vision and data loader classes.} is loaded using the method from \texttt{loaders.py}. Current examples are \texttt{mnist\_fnn.py} and \texttt{mnist\_cnn.py}.
+    \item \texttt{nn}: This folder holds the main network modules. The names of the contained files are self-descriptive; for instance, the affine (linear) transformation of the \gls{FNN} is defined as a class in \texttt{linear.py}. All modules are subclasses of the \texttt{Module} base class which defines common behaviour.
+    \item \texttt{optim}: This folder holds code defining the optimizers that can be used to train the models. All optimizers are subclasses of the \texttt{Optimizer} base class.
+    \item \texttt{utils}: Contains some utilities for the package most importantly the \texttt{Solver} class in \texttt{solver.py} which can train a classifier. \texttt{utils} also includes a progress bar and a method for onehot encoding a target label.
+\end{itemize}
+Compared to the \gls{VO} code, this code is well-structured and in this way it serves as proof that the author is indeed capable of developing well-structured code.

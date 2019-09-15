@@ -1,0 +1,27 @@
+%!TEX root = ../Thesis.tex
+
+\section{Network architectures}\label{sec: Experimental work: Neural network architectures}
+%This section describes the \gls{NN} model architectures used for the benchmark problems. Detailed model summaries can be found in \autoref{app: models}.
+
+
+\subsection{Architecture for MNIST}\label{sec: Experimental work: Neural network architectures (MNIST)}
+For the \gls{MNIST} problem, a simple \gls{CNN} with 22.000 parameters has been used. Overall, the network has two convolutional layers each followed by batch normalization, max pooling and a ReLU nonlinearity. Fully connected layers follow; the first with batch normalization and ReLU nonlinearity; the second with log-softmax nonlinearity.
+
+In more detail, the first layer is a convolution layer with $10$ $5\times5$ kernels and $10$ biases and is applied to the single greyscale channel of the input images. This layer is followed by a batch normalization layer with a mean and standard deviation for each of the 10 kernels and a learned affine transformation. A max pooling layer with $2\times2$ kernel and no padding is then applied. Finally, a ReLU nonlinearity is applied. The second convolution layer has $20$ kernels but is otherwise identical to the first also followed by batch normalization, max pooling and ReLU nonlinearity. The following fully connected layer has the $320$ outputs of the preceding convolution layer as input and has $50$ outputs followed by batch normalization and ReLU nonlinearity. The output layer of the model is fully connected with $50$ inputs and $10$ outputs, one for each digit. A log-softmax nonlinearity is applied to the output units and combined with the \gls{NLL} loss. \autoref{lst: Network models: MNIST with batch normalization} contains a summary of this network.
+
+
+\subsection{Architecture for Atari environments}\label{sec: Experimental work: Neural network architectures (RL}
+The network architecture used for learning policies for the Atari environments is the same as the one used by \cite{Mnih2015, Silver2016}. In short, the network is a \gls{CNN} with three convolutional layers followed by two fully connected layers totalling 1.685.667 parameters, most of them in the first linear layer.
+
+In more detail, the first convolutional layer has $32$ $8\times8$ kernels, $32$ biases and is applied to each of the four most recent frames, each of which is treated as a channel. This layer has a stride of $4$ and is followed by a ReLU nonlinearity. The second convolutional layer has $64$ $4\times4$ kernels, $64$ biases and is applied to each of the $32$ $20\times20$ outputs of the previous layer. It has a stride of $2$ and is also followed by a ReLU nonlinearity. The third and final convolutional has $64$ $3\times3$ kernels, $64$ biases and is applied to each of the $64$ $9\times9$ outputs of the previous layer. It has a stride of $1$ and is followed by a ReLU nonlinearity. A fully connected layer with $64\times7\times7=3136$ inputs, $512$ outputs and a ReLU nonlinearity connects the flattened output of the final convolutional layer with the output layer. The output layer is fully connected and followed by a log-softmax nonlinearity with its number of outputs defined by the specific Atari environment. For the Freeway environment it is $3$ while for Seaquest it is $18$. \autoref{lst: Network models: DQN network for Atari environments} contains a summary of this network.
+
+
+
+%One for each problem type:
+%MNIST
+%CIFAR-10 
+%- Data set\cite{Krizhevsky2009}
+%- Model \cite{Hertel2015}
+%Atari
+
+

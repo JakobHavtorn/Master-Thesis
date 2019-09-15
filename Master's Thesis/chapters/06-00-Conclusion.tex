@@ -1,0 +1,54 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Conclusion}\label{chp: Conclusion}
+\chapterquote{We have shown that for the model described, autonomous learning is possible.}{Block, Knight and Rosenblatt (1962) \cite{Block1962}}
+
+This thesis has considered \glsfirst{VO} as an alternative method for computing the gradients of a potentially nondifferentiable \glsfirst{NN} with potentially nondifferentiable loss by adapting a search distribution during training and perturbing in the parameter space. 
+
+First, \glsfirst{ML} was introduced leading to the description of unsupervised and supervised learning along with \glsfirst{RL}. Then, deep learning was introduced along with the different basic \gls{NN} versions and it was shown how to train them using backpropagation. Finally, a small \gls{NN} toolbox was implemented in Python.
+
+The main part of the thesis considered \gls{VO}. Initially, the gradient estimator of \cite{Salimans2017} was derived using a Taylor expansion. Its bias and variance were evaluated and an interpretation of the estimated gradient as sample covariances was presented.
+The \gls{VO} upper bound was then formally derived and its properties were discussed. The similarity of \gls{VO} to policy gradients within \gls{DRL} was discussed. 
+A discussion on \gls{VO} in relation to search space dimensionality concluded that \gls{VO} effectively selects a low-dimensional subspace of the parameter space of the trained \gls{NN} implicitly and randomly when a parameter perturbation vector is sampled.
+The estimators for isotropic and separable Gaussian search distributions were derived and used centrally in the thesis. Finally, the special hill-climber version of \gls{VO} based on a single perturbation sampled from a Cauchy distribution was briefly presented.
+
+The natural gradient was derived as the optimal search direction for \gls{VO} by constraining the \glsfirst{KL} divergence between the previous and updated search distributions to be constant at each iteration. The natural gradient was then shown to be superior to the regular gradient by a simple example.
+Sensitivity rescaled perturbations were also presented and applied to \gls{VO} enabling higher learning rates and more stable learning. 
+Antithetic sampling for variance reduction was derived for the \gls{VO} gradient Monte Carlo estimator and shown experimentally to improve learning significantly. 
+Common random numbers was shown not to improve learning. 
+A novel method for variance reduction based on the so-called local reparameterization trick and applicable to cases where the objective function is composed of a sum of individual terms was derived and presented. It exploits the structure of a \glsfirst{FNN} to also reduce the amount of computation required for a forward pass by perturbing in the activation space and propagating a distribution over activations. 
+
+Compared to the estimator presented in \cite{Salimans2017}, the \gls{VO} framework allows for adapting the entire search distribution including the variance of a Gaussian. The effect of adapting the variance of an isotropic Gaussian and per-layer and per-parameter separable Gaussians was evaluated and found to be insignificant. Possible reasons for this were discussed in relation to the geometry of the loss surface including the rarity of local minima, prevalence of saddle points and monotonically decreasing paths which may make adapting the variance difficult.
+
+
+\iffalse
+Introduction
+- Neural networks
+- Types
+- Backpropagation derived
+- Optimization algorithms and techniques along with regularization and initialization schemes presented
+- Neural network toolbox implemented
+
+
+Theory
+- Variational optimization derived 
+- Natural gradient
+- Performance and robustness
+- Methods for variance reduction
+
+
+Experiments
+- Common model augmentations (Batchnorm, dropout, ) were shown to have the expected effects also when using the \gls{VO} gradient
+- Momentum was effective at improving rate of convergence by reducing variance through exponential averaging 
+- Antithetic sampling was effective at reducing gradient variance and thus improve rate of convergence as well as quality of attained minimum
+- Importance mixing and random reuse proved detrimental
+- Common random numbers proved no benefit
+- Variations on algorithm (effect of adapting variance)
+  - Tried without momentum, with momentum without dampening and with momentum plus dampening
+  - Apparently not much to gain
+  - Difficulty in adapting variance may be related to loss surface geometry
+  - Random walk nature of parameter-wise separable may be due to poor variance gradient estimate from lack of information
+
+
+
+\fi

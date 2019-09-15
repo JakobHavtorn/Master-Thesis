@@ -1,0 +1,471 @@
+%!TEX root = ../Thesis.tex
+
+\section{Training neural networks}
+\subsection{Error functions}
+Various error functions for different classes of problems can be derived by following the maximum likelihood approach. For a network $\y(\x,\w)$ with parameters denoted by $\w$, the approach is as follows. First, the assumed distribution of targets given input $\x$ and network, $p(\t|\x,\w)$, is defined. Then its likelihood $p(\T|\X,\w)$ is formed for a batch of inputs and targets, $\X=\cbra{\x_i \mid i\in\mathcal{B}}$, $\T=\cbra{\t_i \mid i\in\mathcal{B}}$, where $\mathcal{B}$ is a batch of indices to the dataset $\mathcal{D}$. Finally the negative logarithm of the likelihood is minimized w.r.t. $\w$.
+
+In deep learning it is common to derive a loss function from the log-likelihood and instead minimize that \cite{Bishop2006}. The error function should take the form of a sum over individual error terms, each of which must be a function of the network parameters \cite{Nielsen2015},
+\begin{equation}\label{eq: Neural networks: Error as a sum over individual terms}
+    E(\w) = \sum_{i\in\mathcal{B}} E_i \ .
+\end{equation}
+The following will present some common error functions.
+
+An assumed Gaussian distribution of targets with shared noise variance, $p(\t|\x,\w)=\mathcal{N}(\t|\y(\x,\w),\sigma^2\I)$, results in a regression problem and the \gls{MSE}
+\begin{equation}
+    E_\text{MSE}(\w) = \frac{1}{2}\sum_{i\in\mathcal{B}} \norm{\y_i-\t_i}^2_2
+\end{equation}
+where the division by $\size{\mathcal{B}}$ has been neglected since it does not affect minimization. The noise variance $\sigma^2$ can be found from the regular \gls{MLE}.
+
+For Bernoulli distributed targets, $t\in\cbra{0,1}$, the predictions are scalar, $y\in\bra{0,1}$, and $p(t|\x,\w)=y(\x,\w)^t\pa{1-y(\x,\w)}^{1-t}$. The result is the binary \gls{CEL},
+\begin{equation}
+    E_\text{BCEL}(\w) = -\sum_{i\in\mathcal{B}} t_i\log y_i + \pa{1-t_i}\log\pa{1-y_i} \ .
+\end{equation}
+
+With $K$ separate binary classifications between independent classes, the target distribution can be modelled by $p(\t|\x,\w)=\prod_{k=1}^K y_k(\x,\w)^{t_k}\pa{1-y_k(\x,\w)}^{1-t_k}$ where a label $t_k\in\cbra{0,1}$ is associated with each of the $K$ classes. The resulting loss is the ``separate" \gls{CEL}
+\begin{equation}
+    E_\text{SCEL}(\w) = -\sum_{i\in\mathcal{B}}\sum_{k=1}^K t_{ik}\log y_{ik} + \pa{1-t_{ik}}\log\pa{1-y_{ik}} \ .
+\end{equation}
+with $y_{ik}=y_k(\x_i,\w)$.
+
+If the $K$ classes are mutually exclusive then $p(t|\x,\w)$ is the categorical, or multinoulli, distribution which can be written as $p(\t|\x,\w)=\prod_{k=1}^K \y_k(\x,\w)^{t_k}$ using a one-hot encoding of the targets $\t$. The result is the categorical \gls{CEL}
+\begin{equation}
+    E_\text{CCEL}(\w) = -\sum_{i\in\mathcal{B}}\sum_{k=1}^K t_{ik}\log y_{ik} \ .
+\end{equation}
+
+\subsection{The canonical link}
+It should be noted that the choice of final layer activation is intimately connected to the chosen error function through the so-called \textit{canonical link function}. When combining an error function with the corresponding canonical link function as activation, the gradient of a single contribution to the error w.r.t. the output layer hidden units $\z^{\bra{L}}$ takes the form of a signed error,
+\begin{equation}
+    \pderiv{E_i}{\z_i^{\bra{L}}} = \pderiv{E_i}{\a_i^{\bra{L}}}\pderiv{\a_i^\bra{L}}{\z_i^\bra{L}} = \y_i-\t_i \ .
+\end{equation}
+The canonical activation for the \gls{MSE} loss is the identity function, i.e. the output units are simply linear. This can easily be seen by setting $\a^{\bra{L}}=\z^{\bra{L}}$. Then 
+\begin{equation*}
+    \pderiv{\a^\bra{L}}{\z^\bra{L}}=\I
+\end{equation*}
+and by definition of $\y$ and the \gls{MSE},
+\begin{align*}
+    \pderiv{E_i}{\z^{\bra{L}}}
+    &= \pderiv{E_i}{\a^{\bra{L}}}\\
+    &= \pderiv{E_i}{\y}\\
+    %&= \pderiv{}{\y} \bra{\frac{1}{2}(\y-\t)\transpose(\y-\t)}\\
+    &= \pderiv{}{\y}\norm{\y-\t}_2^2\\
+    &= \y-\t \ ,
+\end{align*}
+ignoring the $i$ subscript on $\y, \t, \z^\bra{L}$ and $\a^\bra{L}$ for simplicity.
+For the binary and $K$ class separate binary \gls{CEL} the canonical activation is the sigmoid while for the multiclass \gls{CEL} it is the softmax \cite{Bishop2006}. These relation won't be derived here. When applying the canonical link for the error functions above, the loss is also sometimes referred to as the \gls{NLL} loss.
+
+
+\subsection{Backpropagation}
+The predominant method for training of neural networks is the \textit{backpropagation} algorithm. Much as for the perceptron, an error function is defined and the network is optimized to minimize this error. The gradient of the error function w.r.t. all learnable parameters of the network is computed and used to adjust these in the direction that minimizes error.
+
+The backpropagation algorithm is at its core a serial application of the chain rule of calculus. As such it requires a differentiable network model in that the applied transformations and nonlinearities must be differentiable. It also requires a differentiable error function as discussed above \cite{Nielsen2015}. A model satisfying these requirements is sometimes called \textit{end-to-end differentiable}.
+
+\subsubsection{Backpropagation in feedforward neural networks}
+Consider an \gls{FNN}. By the chain rule, the gradient of the loss w.r.t. to the hidden units of any layer $l$ can be written as
+\begin{equation}\label{eq: Neural networks: Backpropagation in FNN to arbitrary depth hidden unit}
+    \pderiv{E_i}{\z^\bra{l}} = 
+    \underbrace{
+        \underbrace{
+            \underbrace{
+                \pderiv{E_i}{\a^\bra{L}}\pderiv{\a^\bra{L}}{\z^\bra{L}}
+            }_{\deltab^\bra{L}}
+            \pderiv{\z^\bra{L}}{\a^\bra{L-1}}\pderiv{\a^\bra{L-1]}}{\z^\bra{L-1}}
+        }_{\deltab^\bra{L-1}}
+        \dots
+        \pderiv{\z^\bra{l+1}}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}
+    }_{\deltab^\bra{l}}
+\end{equation}
+where the accumulated \textit{error signals}, $\deltab^\bra{l}$, have been defined as shown. These are useful for making notation more compact and illustrating the symmetry of backpropagation. One should note that the derivative of a scalar by a vector is a vector (gradient), the derivative of a vector by a vector is a matrix (Jacobian) and the derivative of a scalar by a matrix is a matrix.
+It is important to be mindful of dimensions while taking matrix and vector derivatives.
+Except for the output layer the chain rule can be applied sequentially all through the \gls{FNN} by repeating the 
+\begin{equation*}
+    \dots\pderiv{\z^\bra{l+1}}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}\dots
+\end{equation*}
+pattern. The gradient w.r.t. any learnable parameter can then be found by finally appending the derivative of the appropriate hidden unit with respect to that parameter\footnote{This is of course assuming that the learnable parameter resides in the hidden unit transformation. If for instance the activation function has some learnable parameter, the appropriate derivative of $\a^\bra{l}$ is simply appended the $\pderiv{\z^\bra{l+1}}{\a^\bra{l}}$ term instead.}.
+
+One can note that $\deltab^\bra{L}$ will equal $\y-\t$ in case the canonical link activation is used. 
+One can also note that the $\pderiv{\z^\bra{l+1}}{\a^\bra{l}}$ terms are derivatives of the $l$'th layer affine transformation w.r.t. its input and that the $\pderiv{\a^\bra{l}}{\z^\bra{l}}$ terms are the derivatives of the $l$'th layer activation function w.r.t. its inputs.
+
+For any activation applied elementwise to an $H_l$-dimensional hidden unit, the $\pderiv{\a^\bra{l}}{\z^\bra{l}}$ term can be seen to be a diagonal matrix. This can be computed as follows.
+\begin{align}
+    \pderiv{\a^\bra{l}}{\z^\bra{l}}
+    &= \pderiv{}{\z^\bra{l}}\bra{\varphi_l\pa{\z^\bra{l}}} = \pderiv{}{\z^\bra{l}}\bmat{\varphi_l\pa{z_1^\bra{l}}\\\varphi_l\pa{z_2^\bra{l}}\\\vdots\\\varphi_l\pa{z_{H_l}^\bra{l}}}\nonumber
+    \shortintertext{which is the Jacobian matrix,}
+    \pderiv{\a^\bra{l}}{\z^\bra{l}}
+    &= \bmat{
+        \pderiv{\varphi_l\pa{z_1^\bra{l}}}{z_1^\bra{l}} & \dots & \pderiv{\varphi_l\pa{z_1^\bra{l}}}{z_H^\bra{l}} \\ 
+        \vdots & \ddots & \vdots \\
+        \pderiv{\varphi_l\pa{z_{H_l}^\bra{l}}}{z_1^\bra{l}} & \dots & \pderiv{\varphi_l\pa{z_{H_l}^\bra{l}}}{z_{H_l}^\bra{l}}
+    },\nonumber
+    \shortintertext{which reduces to}
+    \pderiv{\a^\bra{l}}{\z^\bra{l}}
+    &= \bmat{
+        \varphi_l'\pa{z_1^\bra{l}} & \dots & 0 \\ 
+        \vdots & \ddots & \vdots \\
+        0 & \dots & \varphi_l'\pa{z_{H_l}^\bra{l}}
+    }
+    = \text{diag}\pa{\varphi_l'\pa{\z^\bra{l}}} \ .\label{eq: Neural networks: Gradient of activation function applied elementwise to hidden unit}
+\end{align}
+% \begin{align}\label{eq: Neural networks: Gradient of activation function applied elementwise to hidden unit}
+%     \pderiv{\a^\bra{l}}{\z^\bra{l}}
+%     &= \pderiv{}{\z^\bra{l}}\bra{\varphi_l\pa{\z^\bra{l}}}\nonumber\\
+%     % &= \pderiv{}{\z^\bra{l}}\bra{\varphi_l\pa{\bmat{z_1^\bra{l}\\z_2^\bra{l}\\\vdots\\z_H^\bra{l}}}}\nonumber\\
+%     &= \pderiv{}{\z^\bra{l}}\bmat{\varphi_l\pa{z_1^\bra{l}}\\\varphi_l\pa{z_2^\bra{l}}\\\vdots\\\varphi_l\pa{z_{H_l}^\bra{l}}}\nonumber\\
+%     &= \bmat{
+%         \pderiv{\varphi_l\pa{z_1^\bra{l}}}{z_1^\bra{l}} & \dots & \pderiv{\varphi_l\pa{z_1^\bra{l}}}{z_H^\bra{l}} \\ 
+%         \vdots & \ddots & \vdots \\
+%         \pderiv{\varphi_l\pa{z_{H_l}^\bra{l}}}{z_1^\bra{l}} & \dots & \pderiv{\varphi_l\pa{z_{H_l}^\bra{l}}}{z_{H_l}^\bra{l}}
+%     } \nonumber \\
+%     &= \bmat{
+%         \varphi_l'\pa{z_1^\bra{l}} & \dots & 0 \\ 
+%         \vdots & \ddots & \vdots \\
+%         0 & \dots & \varphi_l'\pa{z_{H_l}^\bra{l}}
+%     } \nonumber \\
+%     % &=  \text{diag}\pa{\varphi_l'\pa{\bmat{
+%     % z_1^\bra{l} \\ 
+%     % \vdots \\
+%     % z_H^\bra{l} }}} \nonumber \\
+%     &=  \text{diag}\pa{\varphi_l'\pa{\z^\bra{l}}}.
+% \end{align}
+Thus, the derivative of the activation is applied elementwise to the hidden unit and arranged in a diagonal matrix.
+
+Since multiplication of a vector by a diagonal matrix effectively multiplies each element of the vector by the corresponding diagonal element, the output layer error signal can be written as
+\begin{align}\label{eq: Neural networks: FNN Backpropagation 1 delta L}
+    \deltab^\bra{L}
+    &= \pderiv{E_i}{\a^\bra{L}}\pderiv{\a^\bra{L}}{\z^\bra{L}}\nonumber\\
+    &= \pderiv{E_i}{\a^\bra{L}}\text{diag}\pa{\varphi_L'\pa{\z^\bra{L}}}\nonumber\\
+    &= \pderiv{E_i}{\a^\bra{L}}\odot\varphi_L'\pa{\z^\bra{L}}
+\end{align}
+where $\odot$ denotes the Hadamard product and $\pderiv{E_i}{\a^\bra{L}}$ could equivalently be written as $\nabla_{\a^\bra{L}}E_i$ since it is the gradient of $E_i$. As activations are computed elementwise from hidden units, there are as many elements in the gradient of $E_i$ w.r.t $\a^\bra{L}$ as there are in $\varphi_L'\pa{\z^\bra{L}}$ and the dimensions match in the elementwise product. The result for the canonical link still holds and $\deltab^\bra{L}$ simplifies to $\y-\t$ for such an output activation.
+
+Using the forward propagation equations for a single \gls{FNN} layer \eqref{eq: Neural networks: Feedforward neural network forward pass for l'th layer} and the previous result for the derivative of an elementwise applied activation function \eqref{eq: Neural networks: Gradient of activation function applied elementwise to hidden unit}, the error signal of the $l$'th layer, $\deltab^\bra{l}$ can be written in terms of the error signal of the next layer, $\deltab^\bra{l+1}$. By \eqref{eq: Neural networks: Backpropagation in FNN to arbitrary depth hidden unit},
+\begin{align}\label{eq: Neural networks: FNN Backpropagation 2 delta l}
+    \deltab^\bra{l}
+    &= \deltab^\bra{l+1}\pderiv{\z^\bra{l+1}}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}\nonumber\\
+    &= \deltab^\bra{l+1}\pderiv{}{\a^\bra{l}}\bra{\W^\bra{l+1}\a^\bra{l}+\b^\bra{l+1}} \odot\varphi_l'\pa{\z^\bra{l}}\nonumber\\
+    &= \W^{\bra{l+1}\transpose} \deltab^\bra{l+1} \odot\varphi_l'\pa{\z^\bra{l}} \ , \quad l\in\bra{1,L-1} \ .
+\end{align}
+This equation gives the means to efficiently backpropagate error signals through the computational graph of an \gls{NN}. The error signal into layer $l$ has the same dimensionality as the number of hidden units in that layer. Therefore, the matrix-vector product $\W^{\bra{l+1}\transpose} \deltab^\bra{l+1}$ will have valid dimensions. The following elementwise multiplication by $\varphi_l'\pa{\z^\bra{l}}$ matches the number of rows in $\W^{\bra{l+1}\transpose}$ since $\z^\bra{l}$ has dimensionality of the number of columns in $\W^\bra{l+1}$ by \eqref{eq: Neural networks: Feedforward neural network forward pass for l'th layer}.
+
+For the weight of the $l$'th layer, the gradient is computed by \eqref{eq: Neural networks: Backpropagation in FNN to arbitrary depth hidden unit} as follows,
+\begin{align}\label{eq: Neural networks: FNN Backpropagation 3 W}
+    \pderiv{E_i}{\W^\bra{l}}
+    &= \overbrace{
+            \pderiv{E}{\a^\bra{L}}\pderiv{\a^\bra{L}}{\z^\bra{L}}
+            \pderiv{\z^\bra{L}}{\a^\bra{L-1}}\pderiv{\a^\bra{L-1]}}{\z^\bra{L-1}}
+            \dots
+            \pderiv{\z^\bra{l+1}}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}
+        }^{\deltab^\bra{l}} \pderiv{\z^\bra{l}}{\W^\bra{l}}\nonumber\\
+%    &= \overbrace{\pderiv{E}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}}^{\deltab^\bra{l}} \pderiv{\z^\bra{l}}{\W^\bra{l}}\nonumber\\
+    &= \deltab^\bra{l} \pderiv{}{\W^\bra{l}}\bra{\W^\bra{l}\a^\bra{l-1} + \b^\bra{l}}\nonumber\\
+    &= \deltab^\bra{l} \a^{\bra{l-1}\transpose} \ ,
+\end{align}
+and for the associated bias,
+\begin{align}\label{eq: Neural networks: FNN Backpropagation 4 b}
+    \pderiv{E_i}{\b^\bra{l}}
+    &= \overbrace{
+            \pderiv{E_i}{\a^\bra{L}}\pderiv{\a^\bra{L}}{\z^\bra{L}}
+            \pderiv{\z^\bra{L}}{\a^\bra{L-1}}\pderiv{\a^\bra{L-1]}}{\z^\bra{L-1}}
+            \dots
+            \pderiv{\z^\bra{l+1}}{\a^\bra{l}} \pderiv{\a^\bra{l}}{\z^\bra{l}}
+        }^{\deltab^\bra{l}} \pderiv{\z^\bra{l}}{\b^\bra{l}}\nonumber\\
+    &= \deltab^\bra{l}\pderiv{}{\b^\bra{l}}\bra{\W^\bra{l}\a^\bra{l-1} + \b^\bra{l}}\nonumber\\
+    &= \deltab^\bra{l} \ .
+\end{align}
+Since $\deltab^\bra{l}$ has dimensions of the $l$'th hidden layer and $\a^\bra{l-1}$ has dimensions of the $l-1$'th hidden layer, the outer product $\deltab^\bra{l} \a^{\bra{l-1}\transpose}$ results in a matrix with dimensionality of the $l$'th hidden layer in its rows and the $l-1$'th in its columns. This is exactly the dimensionality of $\W^\bra{l}$. Since $\deltab^\bra{l}$ has dimensionality of the $l$'th hidden layer, the gradient of the bias matches the dimension of the bias parameter of the $l$'th layer.
+
+Together, 
+%\eqref{eq: Neural networks: FNN Backpropagation 1 delta L}, \eqref{eq: Neural networks: FNN Backpropagation 2 delta l}, \eqref{eq: Neural networks: FNN Backpropagation 3 W} and \eqref{eq: Neural networks: FNN Backpropagation 4 b}
+\eqref{eq: Neural networks: FNN Backpropagation 1 delta L}-\eqref{eq: Neural networks: FNN Backpropagation 4 b}
+define backpropagation of the error signal associated with a single input $\x=\a^\bra{0}$. Since the total error associated with a batch $\mathcal{B}$ of examples is given as a sum of the errors associated with each example \eqref{eq: Neural networks: Error as a sum over individual terms}, it holds for its derivative that
+\begin{equation}
+    \pderiv{E}{\W^\bra{l}} = \sum_{i\in\mathcal{B}} \pderiv{E_i}{\W^\bra{l}}
+\end{equation}
+and likewise for a derivative w.r.t. any other variable. Thus, the total gradient of any parameter is simply obtained by summing the contributions to it from individual training examples \cite{Bishop2006}. 
+
+This batched approach can be efficiently implemented by concatenation of multiple examples into the rows (or columns) of an input matrix,
+\begin{equation}\label{eq: Neural networks: Batch formulation of x's into columns of X}
+    \X = \bmat{\x_1 & \x_2 & \cdots & \x_\mathcal{B}}^\text{T} \ .
+\end{equation}
+Then, activations and hidden units become matrices as well
+\begin{equation}
+    \begin{aligned}\label{eq: Neural networks: Batch formulation of hidden units and activations into columns of matrices}
+        \Z^\bra{l} &= \W^\bra{l}\A^\bra{l-1} + \b^\bra{l} = {\bmat{\z_1^\bra{l} & \z_2^\bra{l} & \cdots & \z_\mathcal{B}^\bra{l}}}^\text{T}\\
+        \A^\bra{l} &= \varphi_l\pa{\Z^\bra{l}} = \bmat{\a_1^\bra{l} & \a_2^\bra{l} & \cdots & \a_\mathcal{B}^\bra{l}}^\text{T}
+    \end{aligned}
+\end{equation}
+while the weights and biases retain the same dimensions.
+%Putting examples in columns, single examples variables can simply be replaced by batched versions in the formulas above.
+%Examples in rows requires transposing the operations to match although this is often the convention used. Such a matrix is typically called a \textit{design matrix}.
+This method allows efficient forward propagation of an entire batch of examples through the network. The loss and gradients are computed as already described.
+
+\subsubsection{A two layer feedforward neural network}
+Here, the training process of neural networks is illustrated by derivation of the backpropagation equations for a two layer \gls{FNN} for regression using the \gls{MSE} loss. The network architecture is as the one in \autoref{fig: Neural networks: MLP} The final layer nonlinearity will be the identity function according to the canonical link while the first nonlinearity is the ReLU. The forward pass of this network is
+\begin{equation}
+    \begin{aligned}
+        \z^\bra{1} &= \W^\bra{1}\x + \b^\bra{1}\\
+        \a^\bra{1} &= \text{ReLU}\pa{\z^\bra{1}}\\
+        \z^\bra{2} &= \W^\bra{2}\a^\bra{1} + \b^\bra{2}\\
+        \y &= \a^\bra{2} = \z^\bra{2} \ .
+        % \z^\bra{3} &= \W^\bra{3}\a^\bra{2} + \b^\bra{3}\\
+        % \y = \a^\bra{3} &= \z^\bra{3}.
+    \end{aligned}
+\end{equation}
+Due to the canonical link, $\deltab^\bra{2}=\y-\t$. By \eqref{eq: Neural networks: FNN Backpropagation 3 W}, the gradients for the output layer are
+\begin{align}
+    \pderiv{E}{\W^\bra{2}}
+    &= \deltab^\bra{2}\a^{\bra{1}\transpose}\nonumber\\
+    %&= \pa{\y-\t}\a^{\bra{1}\transpose}\nonumber\\
+    &= \pa{\y-\t}\odot\text{ReLU}\pa{\W^\bra{1}\x + \b^\bra{1}}^\text{T}\\
+\pderiv{E}{\b^\bra{2}}
+    &= \deltab^\bra{2}\nonumber\\
+    &= \pa{\y-\t} \ .
+\end{align}
+With the definition in \eqref{eq: Neural networks: FNN Backpropagation 2 delta l},
+\begin{align}
+    \pderiv{E}{\W^\bra{1}}
+    &= \deltab^\bra{1}\a^{\bra{0}\transpose}\nonumber\\
+    &= \deltab^\bra{1}\x\transpose\nonumber\\
+    &= \W^{\bra{2}\transpose} \deltab^\bra{2} \odot\text{ReLU}'\pa{\z^\bra{1}} \x\transpose\nonumber\\
+    &= \W^{\bra{2}\transpose} \pa{\y-\t} \odot\text{ReLU}'\pa{\W^\bra{1}\x + \b^\bra{1}} \x\transpose\\
+\pderiv{E}{\b^\bra{1}}
+    &= \deltab^\bra{1}\nonumber\\
+    &= \W^{\bra{2}\transpose} \pa{\y-\t} \odot\text{ReLU}'\pa{\W^\bra{1}\x + \b^\bra{1}} \ .
+    % \pderiv{E}{\W^\bra{1}} &= \deltab^\bra{1}\a^{\bra{0}\transpose}\\
+    % \pderiv{E}{\b^\bra{1}} &= \deltab^\bra{1}
+\end{align}
+In case of ReLU activations
+\begin{align}
+    \varphi'(z_k)
+    &= \pderiv{}{z_k}\bra{\max\cbra{0,z_k}}\\
+    % &= \begin{cases}
+    %         \pderiv{z_k}{z_k} & \text{if } z_k>0\\
+    %         \pderiv{0}{z_k} & \text{if } z_k\leq0
+    %   \end{cases}\\
+    &= \begin{cases}
+            1 & \text{if } z_k>0\\
+            0 & \text{if } z_k\leq0
+       \end{cases} \ .
+\end{align}
+Gradients are then backpropagated only for units with positive activations.
+In vectorized form $\varphi'(\z) = \pderiv{}{\z}\bra{\max\cbra{0,\z}}$ and
+\begin{equation}
+    \varphi'(\z) = \G \ ,\quad     G_{k,k}=\begin{cases}
+                                            1 & \text{if } z_k>0\\
+                                            0 & \text{if } z_k\leq0
+                                        \end{cases}
+\end{equation}
+in line with the general derivation which showed that the gradient of an elementwise activation is a diagonal matrix.
+
+
+\subsubsection{Backpropagation in convolutional and recurrent networks}
+The principles used for \glspl{FNN} above can also be applied to training convolutional and recurrent networks. Returning to the example used for discussing vectorization of \glspl{CNN}, the gradient w.r.t. $\K$ is
+% \begin{equation}
+%     \begin{aligned}
+%         \pderiv{E_i}{K_{11}} &= \pderiv{E_i}{S_{11}}\pderiv{S_{11}}{K_{11}} + \pderiv{E_i}{S_{12}}\pderiv{S_{12}}{K_{11}} + \pderiv{E_i}{S_{21}}\pderiv{S_{21}}{K_{11}} + \pderiv{E_i}{S_{22}}\pderiv{S_{22}}{K_{11}}\\
+%         \pderiv{E_i}{K_{12}} &= \pderiv{E_i}{S_{11}}\pderiv{S_{11}}{K_{12}} + \pderiv{E_i}{S_{12}}\pderiv{S_{12}}{K_{12}} + \pderiv{E_i}{S_{21}}\pderiv{S_{21}}{K_{12}} + \pderiv{E_i}{S_{22}}\pderiv{S_{22}}{K_{12}}\\
+%         \pderiv{E_i}{K_{21}} &= \pderiv{E_i}{S_{11}}\pderiv{S_{11}}{K_{21}} + \pderiv{E_i}{S_{12}}\pderiv{S_{12}}{K_{21}} + \pderiv{E_i}{S_{21}}\pderiv{S_{21}}{K_{21}} + \pderiv{E_i}{S_{22}}\pderiv{S_{22}}{K_{21}}\\
+%         \pderiv{E_i}{K_{22}} &= \pderiv{E_i}{S_{11}}\pderiv{S_{11}}{K_{22}} + \pderiv{E_i}{S_{12}}\pderiv{S_{12}}{K_{22}} + \pderiv{E_i}{S_{21}}\pderiv{S_{21}}{K_{22}} + \pderiv{E_i}{S_{22}}\pderiv{S_{22}}{K_{22}}
+%     \end{aligned}
+% \end{equation}
+\begin{equation}
+    \begin{aligned}
+        \pderiv{E_i}{K_{jk}} &= \pderiv{E_i}{S_{11}}\pderiv{S_{11}}{K_{jk}} + \pderiv{E_i}{S_{12}}\pderiv{S_{12}}{K_{jk}} + \pderiv{E_i}{S_{21}}\pderiv{S_{21}}{K_{jk}} + \pderiv{E_i}{S_{22}}\pderiv{S_{22}}{K_{jk}}
+    \end{aligned}
+\end{equation}
+where only a single layer is considered. This reduces to
+\begin{equation}
+    \begin{aligned}
+        \pderiv{E_i}{K_{11}} &= \pderiv{E_i}{S_{11}}X_{11} + \pderiv{E_i}{S_{12}}X_{12} + \pderiv{E_i}{S_{21}}X_{21} + \pderiv{E_i}{S_{22}}X_{22}\\
+        \pderiv{E_i}{K_{12}} &= \pderiv{E_i}{S_{11}}X_{12} + \pderiv{E_i}{S_{12}}X_{13} + \pderiv{E_i}{S_{21}}X_{22} + \pderiv{E_i}{S_{22}}X_{23}\\
+        \pderiv{E_i}{K_{21}} &= \pderiv{E_i}{S_{11}}X_{21} + \pderiv{E_i}{S_{12}}X_{22} + \pderiv{E_i}{S_{21}}X_{31} + \pderiv{E_i}{S_{22}}X_{32}\\
+        \pderiv{E_i}{K_{22}} &= \pderiv{E_i}{S_{11}}X_{22} + \pderiv{E_i}{S_{12}}X_{23} + \pderiv{E_i}{S_{21}}X_{32} + \pderiv{E_i}{S_{22}}X_{33}
+    \end{aligned}
+\end{equation}
+% \begin{equation}
+%     \begin{aligned}
+%         \pderiv{E_i}{K_{11}} &= \pderiv{E_i}{S_{11}}X_{11} + \pderiv{E_i}{S_{12}}X_{12} + \pderiv{E_i}{S_{21}}X_{21} + \pderiv{E_i}{S_{22}}X_{22}
+%     \end{aligned}
+% \end{equation}
+which follows the same pattern as the convolution operation and is in fact simply the convolution of the input example $\X$ with the backpropagated error signals $\pderiv{E_i}{S_{jk}}$. A similar result holds for the gradient w.r.t. $\X$.
+For \glspl{RNN}, backpropagation for \glspl{FNN} is applied throughout the unrolled computational graph and is often called \textit{backopragation through time} \cite{Goodfellow2016}.
+% \todo[inline]{Maybe simplify these equations a bit. Maybe using $d K_{ij}$ so four equations reduces to one.}
+
+
+\subsubsection{Implementation of neural network framework}
+The modular architecture of \glspl{FNN}, \glspl{CNN} and \glspl{RNN} makes for a handy abstraction when implementing \gls{NN} models in practice. In Python, any layer can be defined as a class with learnable parameters as attributes and \texttt{forward} and \texttt{backward} methods for propagation of respectively data and gradients through the layer. 
+
+For instance, an \gls{FNN} layer can be defined as a class with e.g. \texttt{weight} and \texttt{bias} attributes. The \texttt{weight} and \texttt{bias} can be implemented as instances of a simple class which holds both the actual parameter and potentially its gradient in \texttt{data} and \texttt{grad} NumPy\footnote{\url{http://www.numpy.org/}} array attributes.
+The \texttt{forward} method takes the previous activations as input and outputs the hidden unit.
+\begin{lstlisting}[language=python]
+def forward(self, x):
+    self.x = x
+    z = np.dot(x, self.weight.data) + self.bias.data
+    return z
+\end{lstlisting}
+The \texttt{backward} method then takes the error signal from the next layer, $\deltab^\bra{l+1}$, as input and computes the gradients associated with the \texttt{weight} and \texttt{bias} attributes before computing and outputting $\deltab^\bra{l}$. 
+\begin{lstlisting}[language=python]
+def backward(self, delta):
+    self.weight.grad = np.dot(self.x.T, delta)
+    dx = np.dot(delta, self.weight.data.T)
+    self.bias.grad = delta.sum(axis=0)
+    return dx
+\end{lstlisting}
+This recipe can be used to implement also the nonlinearities as well as other types of network layers.
+
+As part of this thesis, a small toolbox has been implemented on the side\footnote{\url{https://github.com/JakobHavtorn/nn}}. This implementation includes sigmoid, tanh, ReLU and softplus activations along with the \gls{MSE} and categorical \gls{CEL}. The affine and convolutional layers are implemented along with batch normalization and dropout which will be introduced later. Finally, the \gls{SGD} optimizer has been implemented with $L^1$ and $L^2$ regularizations as well as regular and Nesterov momentum. Structurally, the implementation is inspired by the PyTorch deep learning framework \cite{Paszke2017}. Although the implementation has not been used for the experimental part of the thesis, it served as a base for theoretical reasoning.
+
+
+\subsection{Optimization algorithms}
+This section introduces some optimization techniques commonly used for gradient descent optimization of neural networks. Throughout this section, the parameters being optimized will be denoted by $\w$.
+
+\subsubsection{Stochastic gradient descent with momentum}\label{sec: Neural networks training: Optimization: SGD with momentum}
+The most basic version of gradient based optimization is gradient descent,
+\begin{equation}
+    \w \leftarrow \w - \eta\nabla_\w E(\w) \ .
+\end{equation}
+In deep learning, $\nabla_\w E$ is most often computed on a subset of the training set. This introduces additional noise in the gradient estimate compared to using the full training set, hence ``stochastic".
+
+Momentum \cite{Qian1999} can be added to the gradient in order to reduce the jerky motion of following a noisy gradient and to improve the performance of gradient descent in ravines. Momentum is controlled by a forgetting factor $\gamma$ which controls the amount of previous gradient information that is included,
+\begin{equation}
+    \begin{aligned}
+        \v & \leftarrow \gamma\v + \eta\nabla_\w E(\w)\\
+        \w & \leftarrow \w - \v \ .
+    \end{aligned}
+\end{equation}
+Typically, $\gamma$ is around 0.9. Momentum can significantly improve the performance of gradient based optimization of \glspl{NN}.
+
+Nesterov accelerated momentum \cite{Nesterov1983, Sutskever2013} improves on regular momentum by including a sense of future direction into the momentum. 
+\begin{equation}
+    \begin{aligned}
+        \v & \leftarrow \gamma\v + \eta\nabla_\w E(\w-\gamma\v)\\
+        \w & \leftarrow \w - \v \ .
+    \end{aligned}
+\end{equation}
+By computing the gradient at $\w-\gamma\v$, the algorithm is effectively looking ahead and computing the gradient at the approximate future location rather than the current. Nesterov momentum has significantly improved optimization of \glspl{RNN} \cite{Bengio2013a}.
+
+
+
+\subsubsection{Adam}
+The Adam optimization algorithm \cite{Kingma2014} relies on adaptive estimation of the first and second momentum of the gradient, i.e. its mean $\m$ and variance $\v$, in every direction. At iteration $t$ of the optimization procedure,
+\begin{subequations}
+    \begin{align}
+        \m_t \leftarrow \beta_1\m_{t-1} +\pa{1-\beta_1}\nabla_\w E(\w_{t-1}) \\
+        \v_t \leftarrow \beta_2\v_{t-1} +\pa{1-\beta_2}\nabla_\w E(\w_{t-1})^2 \ .
+    \end{align}
+\end{subequations}
+Incidentally, when initialized as zero vectors, these moment estimates become biased. Bias corrected versions are therefore computed,
+\begin{subequations}
+    \begin{align}
+        \hat{\m}_t \leftarrow \frac{\m_t}{1-\beta_1^t}\\
+        \hat{\v}_t \leftarrow \frac{\v_t}{1-\beta_2^t} \ ,
+    \end{align}
+\end{subequations}
+and the parameters are updated,
+\begin{equation}
+    \w_{t} \leftarrow \w_{t-1} - \frac{\eta}{\sqrt{\hat{\v}_t+\epsilonb}}\hat{\m}_t \ .
+\end{equation}
+Intuitively, Adam behaves like a heavy ball with friction \cite{Heusel2017} so as to take restrained steps at each iteration and not overshoot. The proposed default hyperparameter values are $\beta_1=0.9$, $\beta_2=0.999$ and $\epsilonb=10^{-8}$.
+
+Other optimization algorithms include Adagrad \cite{Duchi2011}, Adadelta \cite{Zeiler2012}, RMSProp, AdaMax \cite{Kingma2014}, Nadam \cite{Dozat2016} and AMSgrad \cite{Reddi2018}.
+
+
+\subsection{Optimization and regularization techniques}
+Different techniques exist to prevent \glspl{NN} from overfitting to which they can be prone due to their many parameters and high capacity. This section briefly considers the two primary forms of weight norm regularization and dropout. Although primarily used to improve network training, batch normalization can also have a regularizing effect and is also considered here.
+
+\subsubsection{Parameter norm penalties}
+Parameter norm regularization introduces an additional loss term $\Omega(\w)$ to the cost function and a regularization hyperparameter $\alpha\in[0,\infty)$,
+\begin{equation}
+    E(\w,\alpha) = E(\w) + \alpha\Omega(\w) \ .
+\end{equation}
+This regularization can then be written as an additive extra term to the gradient, $\nabla_\w E(\w,\alpha) = \nabla_\w E(\w) + \alpha\nabla_\w\Omega(\w)$.
+
+$L^1$ norm regularization uses
+\begin{equation}
+    \Omega(\w) = \norm{\w}_1^2 = \e\transpose\w
+\end{equation}
+where $\e=\bmat{1 & 1 & \dots & 1}\transpose$. The extra term on the gradient is then
+\begin{equation}
+    \nabla_\w\Omega(\w) = \text{sgn}\pa{\w}
+\end{equation}
+which is constant no matter the size of the individual weight giving sparse parameter vectors \cite{Goodfellow2016}.
+
+$L^2$ norm regularization has
+\begin{equation}
+        \Omega(\w) = \frac{1}{2}\norm{\w}_2^2 = \frac{1}{2}\w\transpose\w
+\end{equation}
+with gradient
+\begin{equation}\label{eq: Neural networks: L2 norm regularization gradient term}
+    \nabla_\w \Omega(\w) = \w \ .
+\end{equation}
+This nudges the parameters towards zero at each update depending on their size with larger weights being regularized more than smaller weights.
+
+Often \textit{weight decay} is used to be synonymous with $L^2$ regularization. In weight decay regularization, weights are set to decay exponentially as
+\begin{equation}\label{eq: Neural networks: Weight decay regularization}
+    \w \leftarrow (1-\alpha)\w % - \eta\nabla_\w E(\w)
+\end{equation}
+with rate $\alpha$ at each iteration. This can equivalently be computed by adding the term in \eqref{eq: Neural networks: L2 norm regularization gradient term} to the gradient \cite{Hanson1989} and is thus identical to $L^2$ regularization. However, this has recently been shown to only be the case for \gls{SGD} without momentum whereas for adaptive methods such as Adam, $L^2$ regularization differs from weight-decay and can lead to poor regularization \cite{Loshchilov2017}. It is instead proposed to revert implementations to the formulation of weight-decay in \eqref{eq: Neural networks: Weight decay regularization} which behaves as expected also for adaptive methods \cite{Loshchilov2017} and decouples the learning rate and regularization hyperparameters. In this thesis, PyTorch is used which implements the $L^2$ norm penalty as in \eqref{eq: Neural networks: L2 norm regularization gradient term}.
+
+
+\subsubsection{Batch normalization}
+Batch normalization \cite{Ioffe2015a} is an adaptive reparameterization technique that can significantly speed up training of deep \gls{NN} architectures. For a mini-batch of hidden units $\Z$ as defined in \eqref{eq: Neural networks: Batch formulation of hidden units and activations into columns of matrices} batch normalization applies the following transformation
+\begin{equation}\label{eq: Neural networks: Batch normalization transformation}
+    \hat{\Z}= \frac{\Z-\mub}{\sigmab}
+\end{equation}
+where
+\begin{align}\label{eq: Neural networks: Batch normalization: Mean}
+    \mub = \frac{1}{\size{\mathcal{B}}}\sum_{i\in\mathcal{B}} \Z_{:,i}
+\end{align}
+and
+\begin{equation}\label{eq: Neural networks: Batch normalization: Variance}
+    \sigmab = \sqrt{\frac{1}{\size{\mathcal{B}}}\sum_{i\in\mathcal{B}} \pa{\Z-\mub}^2_{:,i}}
+\end{equation}
+are column vectors containing the mean and variance of each activation computed across the batch of examples. These are often computed including a momentum term from previous batches. In \eqref{eq: Neural networks: Batch normalization transformation}, the subtraction and division of $\Z$ by column vectors is done by broadcasting the operation to every column in $\Z$ and applying it element-wise. That is $\Z_{i,j}$ is normalized by subtraction of $\mu_i$ and division by $\sigma_i$ for all $j\in\mathcal{B}$ \footnote{$\Z$ is $H\times\size{\mathcal{B}}$ and $\mub$ and $\sigmab$ are $H\times1$ for a layer with $H$ hidden units so there is one row in $\mub$ and $\sigmab$ for each row in $\Z$}. Often, learnable parameters $\gammab$ and $\betab$ are included in the batch normalization to enable learning a new mean and variance of the hidden unit,
+\begin{equation}
+    \Z_\text{BN} = \gammab\odot\hat{\Z} + \betab \ .
+\end{equation}
+Again, the operations are broadcast to every column in $\hat{\Z}$. In this way, batch normalization allows learning a useful mean and variance for the suceeding layer by adapting $\gammab$ and $\betab$. This has much easier learning dynamics than without batch normalization where the mean and variance depend nonlinearly on the weights and biases of all preceding layers.
+Batch normalization is typically applied to the hidden unit before the activation function but can alternatively be applied after the activations as well. This remains a topic of discussion \cite{Goodfellow2016}.
+
+An alternative to batch normalization is weight normalization \cite{Salimans2016a} based on a reparameterization instead of mini-batch running averages and variances,
+\begin{equation}
+    \w = \frac{g}{\norm{\v}}\v \ .
+\end{equation}
+The scale and direction of $\w$ are decoupled into $g$ and $\v$ which are then learned instead. This leads to faster convergence similarly to batch normalization. Unlike with batch normalization, the reparameterization above is independent of the mini-batch size and thus causes only minimal computational overhead but the mean of hidden units or activations over batches are nonzero.
+%The mean of hidden units or activations over batches are however nonzero and a mean-only version of batch normalization can be used in conjunction
+
+
+\subsubsection{Dropout}
+Dropout \cite{Hinton2012a, Srivastava2014} is modern regularization technique for deep \glspl{NN}. It regularizes networks by setting the activation of non-output units in the network to zero with probability $p$. Dropout can also be applied to input units, often with a lower $p$ \cite{Goodfellow2016}.
+
+Dropout can be seen as an efficient way of training an ensemble of networks. When using dropout, all sub-networks that can be obtained from the original network by dropping any number of non-output units are in effect being trained simultaneously in an interweaved manner. In fact, contrary to ordinary model averaging, the models of the dropout ensemble also share parameters \cite{Goodfellow2016}. In order to make a prediction, it turns out that votes from the ensemble models can be efficiently collected in a single forward pass through the original model without dropout. This is a good estimate of the ensemble in practice \cite{Hinton2012a}.
+
+Dropout has had most of its success when applied to \glspl{FNN} since these are most prone to overfitting. However, some results indicate that it can potentially improve performance when applied to convolutional layers using a lower dropout rate \cite{Park2017}.
+
+When batch normalization and dropout are combined, it can be difficult to harness the benefits of both \cite{Li2018}. Hence, these won't be combined in this thesis.
+
+% \todo[inline]{Write about dropout}
+% Introducing artiCELs applied dropout only to fully connected layers \cite{Hinton2012a, Srivastava2014} 
+% In convolutional layers, dropout with special type of max pooling \cite{Wu2015}
+% Dropout can also be applied to convolutional layers with lower dropout rate 
+%\textbf{Disharmony of batch normalization and dropout} \cite{Li2018}
+
+
+\subsection{Initialization schemes}
+Before training any \gls{NN} model it must first have its parameters initialized to some values. Parameter initialization has a strong influence on the result of the following training but methods are to a great extent heuristic and the subject remains an active field of study \cite{Goodfellow2016}.
+
+One important point to note about the initial values of \gls{NN} parameters is that they must be chosen to \textit{break symmetry}. An \gls{NN} with all parameters initialized to e.g. the same value will see all its parameters receive the same gradient if the loss function is deterministic and the same update if a deterministic optimization algorithm is used. Since searching for initial parameters that complement each other well, e.g. orthogonal parameters, can be expensive, random initialization is often used \cite{Goodfellow2016}.
+
+One commonly applied form of random initialization is \textit{Glorot-initialization} \cite{Glorot2010}. In order to have approximately the same variance in the activations of all layers as well as in the gradients,
+%the outputs $\y$ as in the inputs $\x$, 
+the weights of a linear \gls{FNN} can be initialized as
+\begin{subequations}
+    \begin{gather}
+        W_{i,j}^\bra{l} \sim \mathcal{U}\pa{-\sqrt{\frac{6}{H_l+H_{l-1}}},\sqrt{\frac{6}{H_l+H_{l-1}}}}
+        \shortintertext{or}
+        W_{i,j}^\bra{l} \sim \mathcal{N}\pa{0,\frac{2}{H_l+H_{l-1}}}
+    \end{gather}
+\end{subequations}
+where $H_l$ and $H_{l-1}$ are the number of hidden units in layers $l$ and $l-1$ and $\mathcal{U}(a,b)$ denotes the continuous uniform distribution on the interval $\bra{a,b}$. The normal distribution version arises by noting that $\text{Var}\bra{\mathcal{U}(-a,a)}=\frac{1}{3}a^2$ such that $\sigma^2$ must equal $\frac{1}{3}a^2$ for the variances to be equal. This also works well in practice for \glspl{FNN} with nonlinear activation functions although a correction can be made based on the nonlinearity \cite{He2015}. For instance, the ReLU nonlinearity has zero output for expectedly half of its input. To maintain a equal input and output variances a gain of $2$ is then multiplied on the variance of the initial weight distribution.
+In this thesis, Glorot intialization is applied to both fully connected and convolutional layers with this scaling. 
+
+As an alternative to random initialization, \textit{transfer learning} can be used. In transfer learning, the parameters from another \gls{NN} are used as initial values for the network. The other \gls{NN} can have the same or a different architecture but must have been trained either unsupervised on the same data or supervised on a related (or even unrelated) task \cite{Goodfellow2016}.

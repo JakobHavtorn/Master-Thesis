@@ -1,0 +1,23 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Future work}\label{chp: Future work}
+\chapterquote{I believe that at the end of the century the use of words and general educated opinion will have altered so much that one will be able to speak of machines thinking without expecting to be contradicted.}{Turing, Alan (1950) \cite{Turing1950}}
+
+
+\section{Variations on regular Monte Carlo}
+This chapter describes potential avenues of future work. An obvious area of interest is variations on the regular Monte Carlo estimation procedure. This thesis has for instance considered antithetic sampling and common random numbers but many others exist.
+
+Quasi-Monte Carlo methods are a variation on regular Monte Carlo methods that use low-discrepancy (deterministic) sequences rather than pseudo-random sequences which can speed up convergence in many cases including high dimensions although the benefit is greater the smoother the function and lower the dimension \cite{Morokoff1995}. It is fairly straightforward to implement such a low-discrepancy sequence in place of a random sampling but it is somewhat unclear how gradients should be computed from it given the formalism of search distributions. Randomized quasi-Monte Carlo methods which add a pseudo-random sequence to the low-discrepancy sequence may be a potential solution \cite{LEcuyer2016}.
+ 
+As discussed in the thesis, the reuse of information gathered from previous samples seems to be promising as indicated e.g. by the effectiveness of gradient momentum. In Monte Carlo methods, stratified sampling reduces variance by sampling in so-called strata which are pre-defined regions of the search space. In high-dimensional problems, this approach becomes infeasible due to the exponentially large number of required strata. Adaptive or recurrent stratified sampling \cite{Carpentier2012} attempts to cope with this by allocating strata adaptively during optimization according to the areas of the objective that exhibit the most variation. A major problem with these stratified approaches is the requirement for the number of samples to scale with the dimension, which is high in an \gls{NN}. The adaptive stratified sampling can however be shown to be at least as efficient as regular Monte Carlo in all cases \cite{Carpentier2012}.
+
+Although these methods may be able to improve performance they do not exploit the special structure of the problem. Approaches that do this in some way are discussed below.
+
+\section{Exploiting problem structure}
+Although a theoretically substantiated argument for the viability of the local reparameterization trick presented in \autoref{sec: Theory: Local reparameterization for variance reduction} has been made, the practical effectiveness of this approach remains unknown. In future work, it should be implemented and subjected to experimental evaluation. 
+
+The utility function presented in \autoref{sec: Theory: Performance and robustness improving techniques: Fitness rank transform} is a central element in the \gls{VO} algorithm but its selection is largely based on heuristics. 
+It serves to remove the dependency on the size of the objective function and computes fixed size utilities that describe the relative fitness of the samples. In doing so it may however discard valuable information on the amount by which some samples were better or worse than others. 
+To move away from the heuristic definition of fitness transformations, a potential approach could be to examine learnable fitness transformations by use of computationally inexpensive \gls{ML} methods. Another improvement to the utility function could be the subtraction of baselines as done outside of deep learning \cite{Yi2009} similarly to how actor-critic methods achieve a variance reduction \cite{}
+
+Staying with the idea of applying \gls{ML} to augment the algorithm, previously observed pairs of sampled parameters and associated fitnesses could potentially be utilized to predict new high performing samples. This could be achieved by using regression models or models for sequence modelling, e.g. a Markov model, given the sequential nature of the algorithm.

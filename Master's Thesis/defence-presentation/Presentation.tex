@@ -1,0 +1,37 @@
+%!TEX TS-program = xelatex
+
+%%%%%%%% PREAMBLE %%%%%%%%
+
+\include{preamble}
+
+
+%%%%%%% INCLUDES %%%%%%%% 
+
+\input{../preamble/macros}
+\input{../preamble/glossary}
+\addbibresource{../bibliography/library.bib}
+
+%%%%%%%% STATIC %%%%%%%% 
+
+\title[Kongens Lyngby]{Variational Optimization of Neural Networks}
+\author{Jakob Drachmann Havtorn}
+\institute{Presentation of Master's Thesis \today}
+\date{\today}
+
+%%%%%%%% PRESENTATION MAIN BODY %%%%%%%%%
+
+\begin{document}
+
+\input{slides/frontmatter}
+\input{slides/slides}
+
+%%%%%%%% BIBLIOGRAPHY AND GLOSSARY %%%%%%%%%
+
+\section*{Post matter}
+\input{slides/postmatter}
+
+%%%%%%%% EXTRA SLIDES %%%%%%%%%
+
+\input{defence-presentation/slides/extraslides}
+
+\end{document}

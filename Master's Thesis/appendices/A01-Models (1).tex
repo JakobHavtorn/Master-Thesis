@@ -1,0 +1,55 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Network models}\label{app: models}
+This appendix lists summaries of the models used for this thesis. 
+%The \texttt{name} column is the variable name assigned to the layer in the Python code while 
+The \texttt{class\_name} refers to the name of the used network module in the PyTorch framework. \autoref{tab: Appendix: PyTorch network module class names descriptions} provides descriptions of all modules used in this thesis for reference. The \texttt{input\_shape} and \texttt{output\_shape} columns gives the dimensions of the feature vector input to and output from the layer. Here, the $-1$ dimension indicates the variable mini-batch size. The learned weight tensors and matrices along with bias vectors have dimensions as specified in the column \texttt{weight\_shapes}. The total number of parameters and the number of those that are trainable are listed in columns \texttt{n\_parameters} and \texttt{n\_trainable}. In the \texttt{settings} column, additional settings or specifications for layers are given. For additional information on any of these summaries, refer to the PyTorch documentation at \url{http://pytorch.org/docs/}.
+
+\begin{table}[H]
+    \centering
+    \caption{Interpretation of PyTorch class names}
+    \begin{tabular}{@{} ll @{}}
+        \toprule
+        \texttt{class\_name} & Layer type \\
+        \midrule
+        Conv2d          & Convolutional layer (2-dimensional)\\
+        Linear          & Fully connected linear layer\\
+        \midrule
+        MaxPool2d       & Max pooling layer (2-dimensional)\\
+        BatchNorm2d     &  Batch normalization layer (2-dimensional)\\
+        BatchNorm1d     &  Batch normalization layer (1-dimensional)\\
+        \midrule
+        ReLU            & Rectified linear unit (elementwise)\\
+        LogSoftmax      & Logarithmic softmax function (elementwise)\\
+        \bottomrule
+    \end{tabular}
+  \label{tab: Appendix: PyTorch network module class names descriptions}
+\end{table}
+
+
+\lstset{flexiblecolumns=false,
+        language=Python,
+        numbers=none,
+        basicstyle=\miniscule}
+\begin{landscape}
+\lstinputlisting[
+    language=Python,
+    caption={The network used for MNIST with batch normalization (MNISTNetBatchnorm)},
+    label={lst: Network models: MNIST with batch normalization}]
+    {appendices/networks/MNISTNetBatchnorm.txt}
+\lstinputlisting[
+    caption={The network used for MNIST without batch normalization (MNISTNet)},
+    label={lst: Network models: MNIST without batch normalization}]
+    {appendices/networks/MNISTNet.txt}
+\end{landscape}
+
+\begin{landscape}
+\lstinputlisting[
+    caption={The network used for MNIST with dropout (MNISTNetDropout)},
+    label={lst: Network models: MNIST with dropout}]
+    {appendices/networks/MNISTNetDropout.txt}
+\lstinputlisting[
+    caption={The network used for Atari environments. This is the DQN network used by \cite{Mnih2015, Silver2016}},
+    label={lst: Network models: DQN network for Atari environments}]
+    {appendices/networks/DQN.txt}
+\end{landscape}

@@ -1,0 +1,50 @@
+%!TEX root = ../Thesis.tex
+
+\section{Problem types in machine learning}
+Any problem addressed by \glsfirst{ML} can generally be categorized as belonging to one of three major types of learning or an intersection between them:
+\begin{itemize}
+    \item Supervised learning
+    \item Unsupervised learning
+    \item Reinforcement learning
+\end{itemize}
+To motivate the main topic of this thesis, these are introduced below.
+
+\subsection{Supervised learning}
+In supervised learning, a model is trained to learn a mapping from inputs $\x_i$ to outputs $y_i$. A dataset is given, consisting of examples of inputs along with associated outputs, or labels. Each pair represents a specific instance of the mapping to be learned. A dataset with $N$ example pairs can be denoted by 
+\begin{equation}
+    \mathcal{D} = \cbra{\x_i,y_i}_{i=1}^{N}.
+\end{equation}
+The dataset is often split in three parts used for \textit{training}, \textit{validation} and \textit{testing}. The validation set is used for tuning of hyperparameters while model comparison is done on the test set. The need for a validation set does not arise for all choices of model and depends also on the problem type.
+
+In a probabilistic sense, the learned mapping can be represented as a conditional probability distribution $p(y_i|\x_i,\thetab)$ where $\thetab$ denotes the parameters of the model to be learned. Using an algorithm dependent on the model and the problem, the model is trained on the dataset. The main goal of training is then for the model to learn to make good predictions from previously unseen inputs. This is called the model's ability to \textit{generalize}. Supervised learning can be split in two major cases, classification and regression \cite{Murphy2012}. 
+
+\subsubsection{Classification}
+In classification, the response variable is \textit{discrete},  $y\in\cbra{1,\dots,K}$, and denotes a class label out of $K$ classes. The task is then to associate each input with the correct class. Examples of classification tasks include document classification and image classification with specific instances such as e-mail spam filtering and face detection \cite{Murphy2012}. 
+
+\subsubsection{Regression}
+Regression is similar to classification but with a \textit{continuous} response variable, $y\in\mathbb{R}$. This continuous response can be anything from stock prices and air pollution levels to continuous control tasks such as manipulating actuators \cite{Murphy2012}. Classification and regression can also be combined. For example, locating a certain object within an image with a bounding box can be formulated as a regression problem while predicting the type of object is a typical classification task \cite{Sermanet2013, Redmon2016}.
+
+\subsection{Unsupervised learning}
+The unsupervised learning problem is characterized by the need to extract information from a dataset which has no labels associated with it, i.e. 
+\begin{equation}
+    \mathcal{D} = \cbra{\x_i}_{i=1}^{N} \ .
+\end{equation}
+The dataset may still be divided in training, validation and testing parts as for the supervised setting while
+the problem can be formulated as one of \textit{density estimation} in which the model learns the underlying distribution of the data, $p(\x_i|\thetab)$, or at least some representation of it \cite{Murphy2012}.
+
+\subsubsection{Clustering}
+Unsupervised learning has several subtasks such as clustering, where the representation of the data is used to discover different groups, or clusters, of data within the data itself. This is akin to the supervised classification task but in the unsupervised setting, the engineer must decide on the number of clusters to use ahead of time or formulate a model which is able to do this automatically \cite{Murphy2012}.
+
+\subsubsection{Dimensionality reduction}
+Another subtask of unsupervised learning is dimensionality reduction, where a latent representation of the data is optimized to encode as much information about the data as possible while reducing the total number of dimensions. This can be used to reduce computation in downstream algorithms and models or, if the resulting new dimensionality is low enough, typically $2$ or $3$, it can be used for visualization of data \cite{Murphy2012}.
+
+\subsection{Reinforcement learning}
+Although \gls{RL} is sometimes viewed as a special case of supervised learning, it can also be considered different enough in some aspects to classify as a separate setting of machine learning \cite{Sutton1998}.
+
+As in unsupervised learning, in \gls{RL} there is no labelled dataset on which to train the algorithm. Rather, the model, or \textit{agent}, learns by trial and error in simulation. Here it is alternately presented with an \textit{observation} from the simulation, or \textit{environment}, and required to take some \textit{action} as a response. After taking some action, the agent receives a \textit{reward} whose size depends on how well the agent performed before being presented with the next observation. Rewards can be awarded densely after each step or sparsely with the most extreme case being a single reward signal for an entire simulation from \textit{initial state} to \textit{terminal state}, also called an \textit{episode} \cite{Sutton1998}.
+
+Similarly to supervised learning, \gls{RL} then requires definition of some sort of measure that converts the reward into a learning signal. Since the definition of optimal behaviour is often impossible in complex systems, this measure is some approximation relying on certain assumptions about the environment. For example, environments are often assumed to be Markovian\footnote{For an environment or system to be Markovian it must satisfy that the future states of the system only depend on the present state, and not the past. In other words, given the present, the future is independent of the past. That entails that all information necessary about the past must be able to encoded into the present state. A Markovian system is also said to have the Markov property.} and decision-making in such a system can be done using the \gls{MDP} formalism \cite{Sutton1998}.
+
+Recently, the surge in popularity of \glspl{NN} has had a significant impact on \gls{RL} giving rise to the field of \gls{DRL} which utilizes \gls{NN} models to encode the learned behaviour or knowledge about the environment \cite{Li2017}. Examples are policy networks \cite{Williams1992, Sehnke2010, Silver2014, Schulman2015, Mnih2016, Schulman2017} and value function networks such as Q networks \cite{Kaelbling1996, Mnih2015}. In all cases, the learning signal is obtained through an objective function which approximates the 'true' and undefined objective. These examples also outline two major approaches to \gls{RL}: Methods searching for value functions and methods searching directly for policies. Q-learning is a value function method which tries to learn the value of an action given the current state. The optimal policy is then simply obtained by choosing the action which maximizes the optimal Q-function. Direct policy search parameterizes a policy, evaluates it on the environment and adjusts the policy according to an estimated reward gradient \cite{Kaelbling1996}. Both methods have their merits although recently, Q-learning and value function approaches have had great successes such as learning to play Atari from pixels \cite{Mnih2015} and mastering the game of Go \cite{Silver2016}.
+
+So-called \glspl{ES} have recently been suggested as an alternative approach to \gls{DRL} by OpenAI\footnote{OpenAI is a non-profit research company concerned with developing ``safe \gls{AI}", \url{https://openai.com/}} \cite{Salimans2017}. As with much of \gls{ML} in general and \gls{RL} in particular, \glspl{ES} are widely based on well-established ideas and has a fairly rich literature. \Glspl{ES} dispense with approximating objectives and instead rely exclusively on the reward signal for learning. This approach is fairly easily parallelized to a large number of \glspl{CPU} which enables fast training making it competitive with classical approaches to \gls{DRL} in certain situations.

@@ -1,0 +1,321 @@
+%!TEX root = ../Thesis.tex
+
+\section{Derivation of ES gradient by Taylor expansion}\label{sec: Theory: stochastic gradient by Taylor expoansion}
+The Taylor series expansion is usually used to translate derivative information about a function at a certain point into information about the output of that function near that point. However, it can also be used for the inverse translation. That is, information about the output of a function at a set of points can be translated into information about the gradient of the function at the center value of those points. 
+
+A simple way to obtain the \gls{ES} gradient estimate presented in \cite{Salimans2017} is through a Taylor expansion of the objective function. Here, this derivation is made to form a simple introduction to stochastic gradient estimation and to make concrete, the simplicity of the estimator used in \cite{Salimans2017}.
+
+\subsection{Univariate objective function}
+\iffalse
+The perturbation form of the second order Taylor approximation of the objective $f(\cdot)$ at $x+\epsilon$ is then
+\begin{equation}\label{eq: Theory: Taylor: Univariate taylor expansion perturbation form}
+    f(x+\epsilon) = f(x) + f'(x)\epsilon + \frac{1}{2}f''(x)\epsilon^2 + R_3
+\end{equation}
+for some small perturbation $\epsilon$ and $R_3=\sfrac{f'''(\xi)\epsilon^3}{6}$ is Lagrange's form of the remainder term and $\xi$ takes some specific value in the interval $[\tilde{x},x]$ . Setting $\tilde{x}=x+\epsilon$ recovers the regular Taylor expansion
+\begin{equation}\label{eq: Theory: Taylor: Univariate taylor expansion}
+    %f(\tilde{x}) = f(x) + f'(x)(\tilde{x}-x) + \frac{1}{2}f''(x)(\tilde{x}-x)^2 + O((\tilde{x}-x)^3).
+        f(\tilde{x}) = f(x) + f'(x)(\tilde{x}-x) + \frac{1}{2}f''(x)(\tilde{x}-x)^2 + R_3
+\end{equation}
+where $\tilde{x}$ is the variable and $x$ is  the expansion point and $R_3=\sfrac{f'''(\xi)(\tilde{x}-x)^3}{6}$.
+\fi
+Suppose the objective function domain is one-dimensional. Then, by the second order Taylor expansion around $x$,
+\begin{equation}\label{eq: Theory: Taylor: Univariate taylor expansion}
+    %f(\tilde{x}) = f(x) + f'(x)(\tilde{x}-x) + \frac{1}{2}f''(x)(\tilde{x}-x)^2 + O((\tilde{x}-x)^3).
+        f(\tilde{x}) = f(x) + f'(x)(\tilde{x}-x) + \frac{1}{2}f''(x)(\tilde{x}-x)^2 + R_3
+\end{equation}
+where $\tilde{x}$ is the variable and $R_3=\sfrac{f'''(\xi)(\tilde{x}-x)^3}{6}$ is Lagrange's form of the remainder term with $\xi$ taking some specific value in the interval $[\tilde{x},x]$. Consider now the difference $\tilde{x}-x$ to be a perturbation, $\epsilon = \tilde{x}-x$. The Taylor approximation can then be written in perturbation form as
+\begin{equation}\label{eq: Theory: Taylor: Univariate taylor expansion perturbation form}
+    f(x+\epsilon) = f(x) + f'(x)\epsilon + \frac{1}{2}f''(x)\epsilon^2 + R_3
+\end{equation}
+where $\epsilon$ is a small number and the remainder term is $R_3=\sfrac{f'''(\xi)\epsilon^3}{6}$. Multiplying \eqref{eq: Theory: Taylor: Univariate taylor expansion perturbation form} by a factor of $\epsilon$ yields
+\begin{equation}\textbf{\label{eq: Theory: Taylor: Univariate taylor expansion perturbation form multiplied by epsilon}}
+    \epsilon f(x) = \epsilon f(x) + f'(x)\epsilon^2 + \frac{1}{2}f(x)\epsilon^3 + \epsilon R_3 \ .
+\end{equation}
+
+Now take $\epsilon\sim\mathcal{N}(0,\sigma^2)$ to be a normally distributed random variable with zero mean and variance $\sigma^2$. That is, a random perturbation to the value at which the objective function is evaluated. Taking the expectation on both sides of \eqref{eq: Theory: Taylor: Univariate taylor expansion perturbation form multiplied by epsilon} yields
+\begin{align}
+    \text{E}[\epsilon f(x + \epsilon)] &= \text{E}\left[f(x)\epsilon + f'(x)\epsilon^2 + \frac{1}{2}f''(x)\epsilon^3 + \epsilon R_3 \right]\nonumber\\
+    &= \text{E}[\epsilon]f(x) + \text{E}[\epsilon^2]f'(x) + \text{E}[\epsilon^3]\frac{1}{2}f''(x) + \text{E}[\epsilon R_3]\nonumber\\
+    &= \sigma^2f'(x) + \text{E}[\epsilon R_3] \ ,\label{eq: Theory: Taylor: Univariate gradient estimator unarranged}
+\end{align}
+using the fact that for a univariate Gaussian the plain central moments are given by
+\begin{equation}\label{eq: Theory: Taylor: plain central moments of Gaussian}
+    \text{E}[\epsilon^p] = 
+    \begin{cases}
+        0 & \text{if $p$ is odd}\\
+        \sigma^p(p-1)!! & \text{if $p$ is even\footnotemark \ .}
+    \end{cases}
+    \footnotetext{{Here, $!!$ denotes the double factorial or semifactorial; the product of all integers from 1 to $n$ that have the same parity as $n$.}}
+\end{equation}
+The gradient estimate is obtained by rearranging \eqref{eq: Theory: Taylor: Univariate gradient estimator unarranged} and neglecting the expectation of the remainder, $\text{E}[\epsilon R_3]$, giving
+\begin{equation}\label{eq: Theory: Taylor: Univariate gradient estimator}
+    f'(x) \approx \frac{1}{\sigma^2}\text{E}[f(x+\epsilon)\epsilon] \ .
+\end{equation}
+Making use of the reparameterization trick to sample the perturbation from a standard Gaussian,
+\begin{equation}
+    \epsilon = \sigma\hat{\epsilon},\quad \epsilon\sim\mathcal{N}(0,\sigma^2) \ , \quad \hat{\epsilon}\sim\mathcal{N}(0,1) \ ,
+\end{equation}
+the gradient estimate can also be written as
+\begin{equation}\label{eq: Theory: Taylor: Univariate gradient estimator from standard Gaussian}
+    f'(x) \approx \frac{1}{\sigma}\text{E}[f(x+\sigma\hat{\epsilon})\hat{\epsilon}] \ .
+\end{equation}
+This estimator can be seen to equal the one presented in \cite{Salimans2017} in the univariate case. 
+
+The gradient can easily be estimated in practice by Monte Carlo approximation. A Monte Carlo estimate of an expectation of any function $g(\x)$ w.r.t. any probability distribution $p(\x|\thetab)$ in the continuous case is given by \cite{Murphy2012}
+\begin{equation}
+    \label{eq: Theory: Monte Carlo approximation}
+    \text{E}\bra{g(\x)}_{\x\sim p(\x|\thetab)} = \int g(\x)p(\x|\thetab)\,\text{d}\x \approx \frac{1}{N}\sum_{n=1}^N g(\x_n) \ ,
+\end{equation}
+where $\x_n\sim p(\x|\thetab)$. 
+By setting $g(x+\epsilon)=\frac{\epsilon}{\sigma^2}f(x+\epsilon) = \frac{\hat{\epsilon}}{\sigma}f(x+\sigma\hat{\epsilon})$ and taking the expectation w.r.t. to $\epsilon$, the gradient in \eqref{eq: Theory: Taylor: Univariate gradient estimator} and \eqref{eq: Theory: Taylor: Univariate gradient estimator from standard Gaussian} can be estimated by
+\begin{equation}\label{eq: Theory: Taylor: Univariate gradient estimator monte carlo}
+    f'(x) \approx \text{E}\bra{g(x+\epsilon)}_{\epsilon\sim\mathcal{N}(0,\sigma^2)} \approx \frac{1}{N\sigma^2}\sum_{n=1}^N f(x+\epsilon_n)\epsilon_n = \frac{1}{N\sigma}\sum_{n=1}^N f(x+\sigma\hat{\epsilon}_n)\hat{\epsilon}_n \ .
+\end{equation}
+% An iterative algorithm can utilize this gradient to optimize the objective in e.g. a gradient descent like manner
+% \begin{equation*}
+%     x \leftarrow x - \eta f'(x).
+% \end{equation*}
+
+
+\subsection{Bias and variance of estimator}\label{sec: Theory: Taylor: Bias and variance of estimator}
+The gradient estimator in \eqref{eq: Theory: Taylor: Univariate gradient estimator from standard Gaussian} is not an unbiased estimate. This is the case since generally $\text{E}[\epsilon R_3]>0$. However, two observations can be made about this bias. First note that the remainder of the Taylor expansion, $R_3$, depends only on the third order derivative of the objective function at some point $\xi\in[\tilde{x}, x]$. Close enough to the optimum, any objective function becomes approximately quadratic. Since the third order derivative of any quadratic function is zero, it is evident that the bias goes to zero at the optimum. As such the gradient estimator is unbiased at any optimum. Secondly, the bias can be manipulated as follows
+\begin{align}
+    \text{E}[\epsilon R_3]
+    &= \text{E}\left[\frac{1}{6}f'''(\xi)(\tilde{x}-x)^3\epsilon\right]\nonumber\\
+    &= \frac{1}{6}\text{E}\left[f'''(\xi)\epsilon^4\right]\nonumber\\
+    &= \frac{\sigma^4}{6}\text{E}\left[f'''(\xi)\hat{\epsilon}^4\right] \ . \label{eq: Theory: Taylor: Bias of univariate gradient}%\\
+    %&= \frac{\sigma^4}{6}\left(\text{E}\left[f'''(\xi)\right]\text{E}\left[\hat{\epsilon}^4\right] + \text{Cov}\left[f'''(\xi),\hat{\epsilon}^4\right]\right)  & \text{by definition of covariance}\\
+    %&= \frac{\sigma^4}{6}\left(3\text{E}\left[f'''(\xi)\right] + \text{Cov}\left[f'''(\xi),\hat{\epsilon}^4\right]\right).
+\end{align}
+From this, it can be seen that the bias is scales with $\sigma^4$. Thus, for small $\sigma$ the bias will be a small number at any distance from an optimum.
+
+The variance of the gradient estimate can be manipulated in a similar manner. Considering  equation \eqref{eq: Theory: Taylor: Univariate gradient estimator monte carlo}, the variance is\footnote{This is considered and argued for in more detail in \autoref{sec: Theory: Methods for variance reduction}}
+\begin{align} % https://en.wikipedia.org/wiki/Variance
+    \text{Var}\left[f'(x)\right]
+    &= \text{Var}\left[\frac{1}{N\sigma}\sum_{n=1}^N f(x+\sigma\hat{\epsilon}_n)\hat{\epsilon}_n\right]\nonumber\\
+    &= \frac{1}{N^2\sigma^2}\sum_{i=1}^N\sum_{j=1}^N\text{Cov}\bra{f(x+\sigma\hat{\epsilon_i})\hat{\epsilon_i},f(x+\sigma\hat{\epsilon_j})\hat{\epsilon_j}} \nonumber\\
+    &= \frac{1}{N\sigma^2}\text{Var}\bra{f(x+\sigma\hat{\epsilon})\hat{\epsilon}} \ . 
+    % &= \frac{1}{N^2\sigma^2}\pa{\sum_{i=1}^N \text{Var}\bra{f(x+\sigma\hat{\epsilon_i})\hat{\epsilon_i}} + 2\sum_{i=1}^N\sum_{j=i+1}^N\text{Cov}\bra{f(x+\sigma\hat{\epsilon_i}), f(x+\sigma\hat{\epsilon_j})}}\nonumber\\
+    % &= \frac{1}{N\sigma^2}\text{Var}\bra{f(x+\sigma\hat{\epsilon})} + \frac{2}{N^2\sigma^2}\sum_{i=1}^N\sum_{j=i+1}^N\text{Cov}\bra{f(x+\sigma\hat{\epsilon_i}), f(x+\sigma\hat{\epsilon_j})}\label{eq: Theory: Taylor: Variance of univariate gradient}
+\end{align}
+where it has been used that the off diagonal terms of the covariance are zero due $\hat{\epsilon}_i$ and $\hat{\epsilon}_j$ being \gls{IID} and that $\text{Var}\bra{\hat{\epsilon}_i}$ is the same on average for all $i$. If $\sigma$ is small or $\sigma\rightarrow0$, $f(x+\sigma\hat{\epsilon})$ can be Taylor expanded to first order around $x$ as in \eqref{eq: Theory: Taylor: Univariate taylor expansion perturbation form}. This gives
+\begin{align}
+    \text{Var}\left[f'(x)\right]
+    &\approx \frac{1}{N\sigma^2}\text{Var}\bra{f(x)\hat{\epsilon} + f'(x)\sigma\hat{\epsilon}^2} \nonumber\\
+    &= \frac{1}{N\sigma^2}\pa{f(x)^2\text{Var}\bra{\hat{\epsilon}} + f'(x)^2\sigma^2\text{Var}\bra{\hat{\epsilon}^2} + 2\sigma f(x)f'(x)\text{Cov}\bra{\hat{\epsilon},\hat{\epsilon}^2}} \nonumber\\
+    &= \frac{1}{N\sigma^2}\pa{f(x)^2 + f'(x)^2\sigma^2\pa{\text{E}\bra{\hat{\epsilon}^4} - \text{E}\bra{\hat{\epsilon}^2}^2}} \nonumber\\
+    &= \frac{1}{N\sigma^2}\pa{f(x)^2 + 2f'(x)^2\sigma^2}\nonumber\\
+    &= \frac{1}{N\sigma^2}f(x)^2 + \frac{2}{N}f'(x)^2 \ . \label{eq: Theory: Taylor: Variance of univariate gradient}
+\end{align}
+Clearly, for small $\sigma$ or $\sigma\rightarrow0$, the variance can become very large and the gradient estimator unusable in practice. These observations about the bias and variance of the estimator and their dependency $\sigma$ make it clear that there is a tradeoff to be made between the bias and variance; lowering $\sigma$ decreases the bias but increases the variance, and vice versa. This is a clear example of a bias-variance tradeoff. 
+The variance will be considered closer in later sections. The dependency of the estimator on the variance will be altered by using the natural gradient in \autoref{sec: Natural Gradient} and the methods for variance reduction will be considered in \autoref{sec: Theory: Methods for variance reduction}. The calculation above has been simulated for the multivariate case as described in \autoref{app: Appendix: Variance of isotropic Gaussian estimator}.
+
+
+
+
+
+\iffalse
+% Inequalities with the expectation
+% https://en.wikipedia.org/wiki/Expected_value#Inequalities
+
+(Does this hold?)
+For the Gaussian distribution, this number will be very small.
+Lagrange's form of the Taylor series remainder after $n$ terms is given by
+\begin{equation}
+O(\epsilon^n) = \frac{f^{(n)}(\xi)\epsilon^n}{n!}
+\end{equation}
+where $\xi\in[x, x+\epsilon]$ ($\xi\sim\mathcal{N}(x,\epsilon)$ ?? ). 
+
+The expectation of this remainder for the specific case of $n=4$ and $\epsilon\sim\mathcal{N}(0,\sigma^2)$ takes the following form.
+\begin{align*}
+\text{E}[O(\epsilon^4)] &= \text{E}\left[\frac{f^{(4)}(\xi)\epsilon^4}{4!}\right]\nonumber\\
+&= \frac{1}{4!}\text{E}\left[f^{(4)}(\xi)\right]\text{E}\left[\epsilon^4\right] + \text{Cov}\left[f^{(4)}(\xi),\epsilon^4\right]\nonumber\\
+&= \frac{3\sigma^4}{24}\text{E}\left[f^{(4)}(\xi)\right] + \text{Cov}\left[f^{(4)}(\xi),\epsilon^4\right]\nonumber\\
+\end{align*}
+\fi
+
+
+
+
+\subsection{Second order derivative}\label{sec: Theory: Taylor: Second order derivative}
+In addition to an estimate of the gradient, the derivation above also makes second order information readily available. 
+Again considering \eqref{eq: Theory: Taylor: Univariate taylor expansion perturbation form} but this time multiplying through by $\left(\frac{\epsilon^2}{\sigma^2}-1\right)$ and taking the expectation yields
+\begin{align*}
+	\text{E}\left[f(x+\epsilon)\left(\frac{\epsilon^2}{\sigma^2} - 1\right)\right] 
+	&= \text{E}\left[\left( f(x) + f'(x)\epsilon + \frac{1}{2}f''(x)\epsilon^2 + R_3\right)\left(\frac{\epsilon^2}{\sigma^2} - 1\right)\right]\\
+	&= \frac{1}{\sigma^2}\text{E} \left[ f(x)\epsilon^2 + f'(x)\epsilon^3 + \frac{1}{2}f''(x)\epsilon^4 + \epsilon^2R_3\right] \\ 
+	& \quad - \text{E} \left[ f(x) + f'(x)\epsilon + \frac{1}{2}f''(x)\epsilon^2 + R_3\right]\\
+    &= \pa{f(x) + 3\sigma^2f''(x) + \text{E}\bra{\epsilon^2R_3}} - \pa{f(x) + \frac{1}{2}\sigma^2f''(x) + \text{E}\bra{R_3}}\\
+	&= \frac{5}{2}\sigma^2f''(x) + \text{E}\left[R_3(\epsilon^2-1)\right] \ .
+\end{align*}
+Neglecting the remainder term and rearranging as for the gradient yields the estimate of the second order derivative.
+\begin{align}
+    f''(x) 
+    &\approx \frac{2}{5\sigma^2}\text{E}\left[f(x+\epsilon)\left(\frac{\epsilon^2}{\sigma^2} - 1\right)\right]\label{eq: Theory: Taylor: Univariate hessian estimator}\\
+    &= \frac{2}{5\sigma^2}\text{E}\left[f(x+\sigma\hat{\epsilon})\left(\hat{\epsilon}^2 - 1\right)\right]\label{eq: Theory: Taylor: Univariate hessian estimator from standard Gaussian}
+\end{align}
+which can also be estimated in practice by a Monto Carlo method
+\begin{equation}
+    f''(x) \approx \frac{2}{5N\sigma^2} \sum_{n=1}^N f(x+\sigma\hat{\epsilon}_n)\left(\hat{\epsilon}_n^2 - 1\right) \ .
+\end{equation}
+
+From the above expression it can be noted that no additional sampling or evaluation of the objective function is required for computing the estimate of the second order derivative compared to the gradient. As such, the derived stochastic optimization scheme accrues almost no additional computational cost by computing second order information, especially if evaluating $f(\cdot)$ is expensive.
+
+The variance of this second order estimate may however be rather high for small values of $\sigma$.
+\begin{equation}
+    \text{Var}\left[f''(x)\right] = \frac{4}{25N^2\sigma^4} \sum_{i=1}^N\sum_{j=1}^N \text{Cov}\left[f(x+\sigma\hat{\epsilon}_i)\left(\hat{\epsilon}_i^2 - 1\right), f(x+\sigma\hat{\epsilon}_j)\left(\hat{\epsilon}_j^2 - 1\right)\right] \ .
+\end{equation}
+In theory, the number of higher order terms that can be estimated is free to choose. Their variance, however, may become so high that their contribution to the updates of $x$ is at best negligible with the risk of being detrimental.
+
+
+\subsection{Derivative estimates as sample covariances}\label{sec: Theory: Taylor expansion interpretation of derivatives as covariances}
+To obtain an intuition for the correctness of the estimators, rewrite \eqref{eq: Theory: Taylor: Univariate gradient estimator} as follows.
+%\begin{align*}
+%    f'(x)
+%    &\approx \frac{1}{\sigma}\text{E}\left[\hat{\epsilon} f(x+\sigma\hat{\epsilon})\right]\\
+%    &= \frac{1}{\sigma} \left(\text{E}\left[\hat{\epsilon}\right]\text{E}\left[f(x+\sigma\hat{\epsilon})\right] + \text{Cov}\left[\hat{\epsilon}, f(x+\sigma\hat{\epsilon})\right]\right)\\
+%    &= \frac{1}{\sigma}\text{Cov}\left[\hat{\epsilon}, f(x+\sigma\hat{\epsilon})\right].
+%\end{align*}
+\begin{align*}
+    f'(x)
+    &\approx \frac{1}{\sigma^2}\text{E}\left[\epsilon f(x+\epsilon)\right]\\
+    &= \frac{1}{\sigma^2} \left(\text{E}\left[\epsilon\right]\text{E}\left[f(x+\epsilon)\right] + \text{Cov}\left[\epsilon, f(x+\epsilon)\right]\right)\\
+    &= \frac{1}{\sigma^2}\text{Cov}\left[\epsilon, f(x+\epsilon)\right] \ .
+\end{align*}
+\newcommand{\appropto}{\mathrel{\vcenter{
+  \offinterlineskip\halign{\hfil$##$\cr
+    \propto\cr\noalign{\kern2pt}\sim\cr\noalign{\kern-2pt}}}}}
+In this perspective, the gradient estimator is simply a scaled version of the covariance between the perturbations and the objective function evaluated at the perturbations. The intuition behind this is fairly straightforward: If the function value increases for a positive perturbation and decreases for a negative, the covariance is positive and the gradient is positive. The opposite holds for the inverse.
+In an optimum, the function is approximately a quadratic function of the perturbation,
+\begin{equation*}
+    f(x+\epsilon) \appropto \epsilon^2 \ ,
+\end{equation*}
+so the change in function value is approximately the same regardless of the sign of the perturbation. Then
+\begin{align*}
+    f'(x)
+    %&\approx \frac{1}{\sigma^2 }\text{Cov}\bra{\epsilon,f(x+\epsilon)}\\
+    %&\approx\frac{1}{\sigma^2 }\text{Cov}\bra{\epsilon, x^2 + \epsilon^2}\\
+    &\appropto\frac{1}{\sigma^2 }\text{Cov}\bra{\epsilon, \epsilon^2}\\
+    &=\frac{1}{\sigma^2}\text{E}\bra{\pa{\epsilon-\text{E}\bra{\epsilon}}\pa{\epsilon^2 - \text{E}\bra{\epsilon^2}}}\\
+    &=\frac{1}{\sigma^2}\text{E}\bra{\epsilon\pa{\epsilon^2 - \sigma^2}}\\
+    &=\frac{1}{\sigma^2}\text{E}\bra{\epsilon^3 + \sigma\epsilon}\\
+    &=0 \ .
+\end{align*}
+As such, the covariance is zero at an optimum, as would be the case for the true gradient.
+
+The same interpretation holds for the estimate of the second order derivative as can be seen from \eqref{eq: Theory: Taylor: Univariate hessian estimator}.
+%\begin{align*}
+%    f''(x)
+%    &\approx \frac{2}{5\sigma^2}\text{E}\left[\left(\hat{\epsilon}^2 - 1\right) f(x+\sigma\hat{\epsilon})\right]\\
+%    &= \frac{2}{5\sigma^2}\left(\text{E}\left[\hat{\epsilon}^2 - 1\right]\text{E}\left[f(x+\sigma\hat{\epsilon})\right] + \text{Cov}\left[\hat{\epsilon}^2 - 1, f(x+\sigma\hat{\epsilon})\right]\right)\\
+%    &= \frac{2}{5\sigma^2}\text{Cov}\left[\hat{\epsilon}^2, f(x+\sigma\hat{\epsilon})\right]
+%\end{align*}
+\begin{align*}
+    f''(x)
+    &\approx \frac{2}{5\sigma^2}\text{E}\left[f(x+\epsilon)\left(\frac{\epsilon^2}{\sigma^2} - 1\right)\right]\\
+    &= \frac{2}{5\sigma^2}\left(\text{E}\left[f(x+\epsilon)\right]\text{E}\left[\frac{\epsilon^2}{\sigma^2} - 1\right] + \text{Cov}\left[\frac{\epsilon^2}{\sigma^2} - 1, f(x+\epsilon)\right]\right)\\
+    &= \frac{2}{5\sigma^4}\text{Cov}\left[\epsilon^2, f(x+\epsilon)\right] \ .
+\end{align*}
+Since the squared perturbation is always positive it holds for any perturbation that if the function increases, the covariance between it and the squared perturbation is positive. If the function decreases it is negative. This is exactly the behaviour expected for the second order derivative which estimates the curvature of the function: At points where the function is convex, the second order derivative is positive. At points where it is concave, the second order derivative is negative. Finally, if for some set of perturbations the function does not change, this indicates a plateau which is again in line with the behaviour of the second order derivative.
+
+
+\subsection{Multivariate case}
+In general, the objective function can be multivariate in which case the variables can be collected in a $d$-dimensional vector $\x\in\mathbb{R}^d$. Then, the Taylor expansion in \eqref{eq: Theory: Taylor: Univariate taylor expansion perturbation form} reads
+\begin{equation}\label{eq: Theory: Taylor: Multivariate Taylor expansion}
+    f(\x+\epsilonb) = f(\x) + \epsilonb\transpose \nabla_\x f(\x) + \frac{1}{2}\epsilonb\transpose\H_\x f(\x)\epsilonb + R_3
+\end{equation}
+where $\epsilonb$ is a perturbation vector, $\nabla_\x f(\x)$ is the gradient of $f$ with respect to $\x$ and $\H_\x f(\x)$ is its Hessian. The gradient is defined as a column vector of the first order partial derivatives
+\begin{equation}
+    \nabla_\x f(\x) = \bmat{\pderiv{f}{x_1} & \pderiv{f}{x_2} & \cdots & \pderiv{f}{x_d}}^\text{T}
+\end{equation}
+and the Hessian is a matrix of the second order partial derivatives
+\begin{equation}
+    \H_\x f(\x) = \bmat{
+	    \pderiv[2]{f}{x_1} & \pderiv[1,1]{f}{x_1,x_2} & \cdots & \pderiv[1,1]{f}{x_1,x_d}\\
+	    \pderiv[1,1]{f}{x_2,x_1} & \pderiv[2]{f}{x_2} & \cdots & \pderiv[1,1]{f}{x_2,x_d}\\
+	    \vdots & \vdots & \ddots & \vdots\\
+	    \pderiv[1,1]{f}{x_d,x_1} & \pderiv[1,1]{f}{x_d,x_2} & \cdots & \pderiv[2]{f}{x_d}
+	    } \ .
+\end{equation}
+
+Left-multiplying \eqref{eq: Theory: Taylor: Multivariate Taylor expansion} by the random vector $\epsilonb\sim\mathcal{N}(\0,\Sigmab)$ and taking the expectation gives
+\begin{align}\label{eq: Taylor: Expected value on both sides before evaluation of terms}
+    \text{E}\left[\epsilonb f(\x+\epsilonb)\right] &= \text{E}\left[\epsilonb f(\x) + \epsilonb\epsilonb\transpose\nabla_\x f(\x) + \frac{1}{2}\epsilonb\epsilonb\transpose\H_\x f(\x)\epsilonb + \epsilonb R_3\right]\nonumber\\
+    &= \text{E}\left[\epsilonb\right] f(\x) + \text{E}\left [\epsilonb\epsilonb\transpose\right]\nabla_\x f(\x) +  \frac{1}{2}\text{E}\left[\epsilonb\epsilonb\transpose\H_\x f(\x)\epsilonb\right] + \text{E}\left[\epsilonb R_3\right] \ .
+    %&= \Sigmab\nabla_\x f(\x) + \text{E}[\epsilonb R_3].
+\end{align}
+Now, $\text{E}\left[\epsilonb\right]=\0$, $\text{E}\left [\epsilonb\epsilonb\transpose\right]=\Sigmab$ and $\H_\x f(\x) = \C\transpose\C$ by the Cholesky factorization. Then
+\begin{align*}
+    \text{E}\left[\epsilonb\epsilonb\transpose\H_\x f(\x)\epsilonb\right]
+    &= \text{E}\left[\epsilonb\epsilonb\transpose\C\transpose\C\epsilonb\right]\\
+    &= \text{Cov}\left[\epsilonb\epsilonb\transpose\C\transpose, \epsilonb\transpose\C\transpose\right] + \text{E}\left[\epsilonb\epsilonb\transpose\C\transpose\right]\text{E}\left[\epsilonb\transpose\C\transpose\right]^\text{T} & \text{by covariance def.}\\
+    &= \C\text{Cov}\left[\epsilonb\epsilonb\transpose,\epsilonb\transpose\right]\C\transpose + \text{E}\left[\epsilonb\epsilonb\transpose\right]\C\transpose\C\text{E}\left[\epsilonb\right]\\
+    &= \C\left( \text{E}\left[\epsilonb\epsilonb\transpose\epsilonb\right] - \text{E}\left[\epsilonb\epsilonb\transpose\right]\text{E}\left[\epsilonb\transpose\right]^\text{T} \right)\C\transpose + \Sigmab\C\transpose\C\0\\
+    &= \C\text{E}\left[\epsilonb\epsilonb\transpose\epsilonb\right]\C \ ,
+\end{align*}
+where it has been used that $\text{E}\left[\x\y\transpose\right]=\text{E}\left[\x\right]\text{E}\left[\y\right]\transpose + \text{Cov}\left[\x,\y\right]$ for random vectors $\x$ and $\y$. To evaluate $\text{E}\left[\epsilonb\epsilonb\transpose\epsilonb\right]$ note that the vector product term takes the form
+\begin{equation*}
+    \epsilonb\epsilonb\transpose\epsilonb 
+    = \bmat{
+        \epsilon_1^2 & \epsilon_1\epsilon_2 & \dots & \epsilon_1\epsilon_d\\
+        \epsilon_1\epsilon_2 & \epsilon_2^2 & \dots & \epsilon_2\epsilon_d\\
+        \vdots &  \vdots & \ddots & \vdots\\
+        \epsilon_1\epsilon_d & \epsilon_2\epsilon_d & \dots & \epsilon_d^2
+    }
+    \bmat{\epsilon_1 \\ \epsilon_2 \\ \vdots \\ \epsilon_d}
+    = \bmat{
+        \epsilon_1^3 + \epsilon_1\epsilon_2^2 + \cdots + \epsilon_1\epsilon_d^2\\
+        \epsilon_1^2\epsilon_2 + \epsilon_2^3 + \cdots + \epsilon_2\epsilon_d^2\\
+        \vdots\\
+        \epsilon_1^2\epsilon_d + \epsilon_2^3 + \cdots + \epsilon_d^3\\
+    } \ .
+\end{equation*}
+Since the expected value applies element-wise to a random vector and is linear, the result is a vector where each element is a sum of expectations of the form
+\begin{equation*}
+    \text{E}\left[\epsilonb\epsilonb\transpose\epsilonb\right] = \bmat{
+        \text{E}\left[\epsilon_1^3\right] + \text{E}\left[\epsilon_1\epsilon_2^2\right] + \cdots + \text{E}\left[\epsilon_1\epsilon_d^2\right]\\
+        \text{E}\left[\epsilon_1^2\epsilon_2\right] + \text{E}\left[\epsilon_2^3\right] + \cdots + \text{E}\left[\epsilon_2\epsilon_d^2\right]\\
+        \vdots\\
+        \text{E}\left[\epsilon_1^2\epsilon_d\right] + \text{E}\left[\epsilon_2^3\right] + \cdots + \text{E}\left[\epsilon_d^3\right]\\
+    } \ .
+\end{equation*}
+The expectations can be recognized to be respectively the third moment in the diagonal and third order cross-moments in the off-diagonal. Since $\epsilonb$ derives from a zero mean Gaussian distribution these are all zero and
+\begin{equation}
+	\text{E}\left[\epsilonb\epsilonb\transpose\H_\x f(\x)\epsilonb\right] = \C\transpose\text{E}\left[\epsilonb\epsilonb\transpose\epsilonb\right]\C = \0 \ .
+\end{equation}
+It then follows from \eqref{eq: Taylor: Expected value on both sides before evaluation of terms} that the gradient can be approximated by
+\begin{equation}\label{eq: Theory: Taylor: Multivariate gradient estimator}
+    \nabla_\x f(\x) \approx \Sigmab^{-1}\text{E}\left[\epsilonb f(\x+\epsilonb)\right] \ .
+\end{equation}
+In the case of an isotropic Gaussian, the covariance matrix has the special structure $\Sigmab=\sigma^2\I$. The gradient estimate then simplifies to the one-dimensional gradient in each of the dimensions. Sampling from a standard Gaussian, $\epsilonb = \sigma\hat{\epsilonb}$ where $\hat{\epsilonb}\sim\mathcal{N}(\0,\I)$, the estimate can be written
+\begin{equation}\label{eq: Theory: Taylor: Multivariate gradient estimate from standard Gaussian}
+    \nabla_\x f(\x) \approx \frac{1}{\sigma}\text{E}\left[\hat{\epsilonb} f(\x+\sigma\hat{\epsilonb})\right] \ .
+\end{equation}
+This estimator is identical to the gradient estimator used in \cite{Salimans2017} and is also known under different names including \textit{simultaneous perturbation stochastic approximation} \cite{Spall1992}, \textit{parameter-exploring policy gradients} \cite{Sehnke2010}, or \textit{zero-order gradient estimation} \cite{Nesterov2017}. Again, a Monto Carlo method gives the estimate in practice by sampling
+\begin{equation}
+    \nabla_\x f(\x) \approx \frac{1}{N\sigma} \sum_{n=1}^N \hat{\epsilonb}_n f(\x+\sigma\hat{\epsilonb}_n) \ .
+\end{equation}
+For this estimator, the observations made about the bias, variance and covariance interpretation for the univariate case hold in each dimension.
+%Left-multiplying \eqref{eq: Theory: Taylor: Multivariate Taylor expansion} by $\left(\Sigmab^{-1}\epsilonb\epsilonb\transpose - \I\right)$ instead gives the estimate of the Hessian
+%\todo[inline]{Write the Hessian estimate}
+
+
+\iffalse
+\begin{equation}
+    \epsilonb\transpose\H_\x f(\x)\epsilonb = \sum_{i=1}^n \sum_{j=1}^n h_{i,j}\epsilonb_i\epsilonb_j.
+\end{equation}
+
+\begin{align*}
+    E[X^TAX] &= E\left[\sum_{i=1}^n \sum_{j=1}^n a_{i,j}X_iX_j\right]\\
+    &= \sum_{i=1}^n \sum_{j=1}^n a_{i,j}E[X_iX_j]
+    & \text{by linearity of expectation}\\
+    &= \sum_{i=1}^n \sum_{j=1}^n a_{i,j}(\sigma_{i,j}+\mu_i\mu_j)
+    &\text{apply covariance formula}\\
+    &= \sum_{i=1}^n \sum_{j=1}^n a_{i,j}\sigma_{j,i}
+    +\sum_{i=1}^n \sum_{j=1}^n a_{i,j}\mu_i\mu_j
+    &\text{since}~\Sigma~\text{is a symmetric matrix}\\
+    &= \sum_{i=1}^n [A\Sigma]_{i,i} + \mu^TA\mu\\
+    &= \text{tr}(A\Sigma) + \mu^TA\mu
+\end{align*}
+\fi
+

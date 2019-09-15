@@ -1,0 +1,10 @@
+%!TEX root = ../Thesis.tex
+
+\section{Structure of the thesis}
+In \autoref{chp: Neural networks}, the neural network is introduced as the central \gls{ML} model of this thesis. The three main types of network are described, along with methods for efficiently training them including the backpropagation algorithm. The chapter also includes an overview of the optimization algorithms, regularization techniques and parameter initialization schemes used in the thesis.
+
+\autoref{chp: Stochastic estimation of neural network gradients} constitutes the main part of the thesis and is concerned with variational optimization as a general and theoretically grounded framework for describing \glspl{ES}. Several augmentations to this framework are considered including use of the natural gradient, inclusion of gradient information for sensitivity rescaled perturbations and methods for variance reduction.
+
+Second to last, \autoref{chp: Experimental results} presents experimental results that seek to validate the variational gradient estimators as well as compare their performance. The computational scaling of the algorithm is first presented. Experiments then include validation of the effect of the deep learning methods of batch normalization and dropout when used in conjunction with variational optimization as well as the effect of rescaling perturbations according to network sensitivity. The different methods for variance reduction are also tested and finally, different variations on the variational optimization algorithm are compared.
+
+Finally, the thesis is concluded in \autoref{chp: Conclusion}.

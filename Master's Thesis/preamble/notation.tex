@@ -1,0 +1,112 @@
+%!TEX root = ../Thesis.tex
+
+\makenomenclature
+%\markboth{\MakeUppercase\nomname}{\MakeUppercase\nomname}
+% Correct header on multiple page nomenclature
+\patchcmd{\thenomenclature}
+  {\chapter*{\nomname}}% usually only \chapter*{\nomname} is issued
+  {\chapter*{\nomname}\markboth{\MakeUppercase\nomname}{\MakeUppercase\nomname}}
+  {}{}
+% Rename Nomenclature to Notation
+\renewcommand{\nomname}{Notation}
+% Increase width of box for mathematical symbol on left
+\setlength{\nomlabelwidth}{2.5cm}
+% \setlength{\nomitemsep}{-\parsep}
+
+% Command for the group subtitles
+\newcommand{\nommenclaturesubtitle}[1]{%
+    \bigskip
+    \item[\bfseries \hspace{2.5cm}\: #1
+        % \vspace{1cm}\\
+        % \hspace{2.4cm} #1 \hfill\\
+        % \par\noindent\rule{\widthof{#1}}{1pt}
+    ]
+    %\par\noindent\rule{\widthof{#1}}{1pt}%
+    %   \hspace*{-\leftmargin}%
+    %   \rule[2pt]{0.45\linewidth}{1pt}%
+    %   \hfill #1\hfill
+    %   \rule[2pt]{0.45\linewidth}{1pt}%
+}
+
+% Introductory text to notation section
+\renewcommand{\nompreamble}{%
+    This section collects definitions of the notation used in the thesis. Much of this is defined in the thesis in the order that it is used but is collected here for reference and convenience. There are no major departures from convention.
+}
+
+% Definition of the groups
+\renewcommand\nomgroup[1]{%
+      \ifstrequal{#1}{A}{\nommenclaturesubtitle{Numbers and arrays}}{%
+      \ifstrequal{#1}{B}{\nommenclaturesubtitle{Sets}}{%
+      \ifstrequal{#1}{C}{\nommenclaturesubtitle{Indexing}}{%
+      \ifstrequal{#1}{D}{\nommenclaturesubtitle{Linear algebra operations}}{%
+      \ifstrequal{#1}{E}{\nommenclaturesubtitle{Calculus}}{%
+      \ifstrequal{#1}{F}{\nommenclaturesubtitle{Probability theory}}{%
+      \ifstrequal{#1}{G}{\nommenclaturesubtitle{Functions}}{%
+      }}}}}}}
+}
+
+% Notation entries
+\nomenclature[A, 01]{$a$}{A scalar; integer or real}
+\nomenclature[A, 02]{$\a$}{A column vector}
+\nomenclature[A, 03]{$\A$}{A matrix}
+\nomenclature[A, 04]{$\text{diag}(\a)$}{A square diagonal matrix of the elements of $\a$}
+\nomenclature[A, 05]{$\e$}{A vector of ones, $\e=\bmat{1 & \cdots & 1}\transpose$}
+\nomenclature[A, 06]{$\I$}{The identity matrix, $\I=\text{diag}\pa{\e}$}
+
+\nomenclature[B, 01]{$\mathcal{A}, \mathbb{A}$}{A set}
+\nomenclature[B, 02]{$\mathbb{R}$}{Set of real numbers}
+\nomenclature[B, 03]{$\cbra{s_1, s_2, \dots, s_n}$}{Set of scalars $s_1, s_2, \dots, s_n$; also written as $\cbra{s_i}_{i=1}^n$}
+%\nomenclature[B, 04]{$\bra{a, b}$}{Inclusive real interval between $a$ and $b$, $\bra{a, b}=\cbra{x\in\mathbb{R}\mid a\leq x \leq b}$}
+%\nomenclature[B, 05]{$\pa{a, b}$}{Exclusive real interval between $a$ and $b$, $\pa{a, b}=\cbra{x\in\mathbb{R}\mid a<x<b}$}
+\nomenclature[B, 06]{$\left(a, b\right]$}{Semi-inclusive real interval between $a$ and $b$, $\left(a, b\right]=\cbra{x\in\mathbb{R}\mid a<x\leq b}$}
+
+\nomenclature[C, 01]{$a_i$}{Element $i$ of vector $\a$ with first index $1$}
+\nomenclature[C, 02]{$A_{i,j}$}{Element $i,j$ of matrix $\A$. Comma omitted when unambiguous.}
+\nomenclature[C, 03]{$A_{i,:}$}{Row $i$ of matrix $\A$ (a row vector)}
+\nomenclature[C, 04]{$A_{:,j}$}{Column $j$ of matrix $\A$ (a column vector)}
+\nomenclature[C, 05]{$\a^\bra{l}$}{Neural network layer indexing; a vector in layer $l$}
+\nomenclature[C, 06]{$\a^\vbra{t}$}{Recurrent neural network sequence indexing; vector at timestep $t$ in sequence $\cbra{\a^\vbra{t}}_{t=1}^T$}
+
+\nomenclature[D, 01]{$\a\transpose$}{Transpose of column vector $\a$ to give row vector}
+\nomenclature[D, 02]{$\A\transpose$}{Transpose of matrix $\A$}
+\nomenclature[D, 03]{$\a\transpose\b$}{Inner product of $\a$ and $\b$, $\a\transpose\b=\a\cdot\b$}
+\nomenclature[D, 04]{$\a\b\transpose$}{Outer product of $\a$ and $\b$}
+\nomenclature[D, 05]{$\A\B$}{Matrix product of $\A$ and $\B$}
+\nomenclature[D, 06]{$\A*\B$}{Convolution (actually cross-correlation) of $\A$ and $\B$}
+\nomenclature[D, 07]{$\A\odot\B$}{Elementwise, or Hadamard, product of $\A$ and $\B$}
+\nomenclature[D, 08]{$\det{\A}$}{Determinant of matrix $\A$}
+\nomenclature[D, 09]{$\norm{\a}$}{$L^2$ norm of $\a$}
+\nomenclature[D, 10]{$\norm{\a}_p$}{$L^p$ norm of $\a$}
+\nomenclature[D, 11]{$\Tr{\A}$}{Trace of matrix $\A$, $\Tr{\A}=\sum_i A_{i,i}$}
+
+\nomenclature[E, 01]{$\frac{\text{d}y}{\text{d}x}$}{Derivative of $y$ with respect to $x$}
+\nomenclature[E, 02]{$\pderiv{y}{x}$}{Partial derivative of $y$ with respect to $x$}
+\nomenclature[E, 03]{$\nabla_\x$}{Del, nabla or Laplacian operator, $\nabla_\x = \bmat{\pderiv{}{x_1} & \cdots & \pderiv{}{x_n}}^\text{T}, \; \x\in\mathbb{R}^{n}$}
+\nomenclature[E, 04]{$\nabla_\x y$}{Gradient of $y$ with respect to $\x$, $\nabla_\x y = \bmat{\pderiv{y}{x_1} & \cdots & \pderiv{y}{x_n}}^\text{T}, \; \x\in\mathbb{R}^{n}$}
+\nomenclature[E, 05]{$\H_\x$}{Hessian operator, $\H_\x = \nabla_\x\nabla_\x\transpose = \bmat{
+	    \pderiv[2]{}{x_1} & \pderiv[1,1]{}{x_1,x_2} & \cdots & \pderiv[1,1]{}{x_1,x_n}\\
+	    \pderiv[1,1]{}{x_2,x_1} & \pderiv[2]{}{x_2} & \cdots & \pderiv[1,1]{}{x_2,x_n}\\
+	    \vdots & \vdots & \ddots & \vdots\\
+	    \pderiv[1,1]{}{x_n,x_1} & \pderiv[1,1]{}{x_d,x_2} & \cdots & \pderiv[2]{}{x_n}
+	    }$}
+\nomenclature[E, 06]{$\H_\x y$}{Hessian matrix of $y$ with respect to $\x$; matrix of all second order partial derivatives}
+\nomenclature[E, 07]{$\nabla^2_\x$}{Laplacian operator, $\nabla^2_\x=\nabla_\x\transpose\nabla_\x = \nabla_\x\cdot\nabla_\x=\sum_i \pderiv[2]{}{x_i}=\Tr{\H_\x}$}
+\nomenclature[E, 08]{$\nabla^2_\x y$}{Laplacian of $y$ with respect to $\x$; sum of the unmixed second order partial derivatives}
+\nomenclature[E, 09]{$\pderiv{\y}{\x}$}{Jacobian matrix of $\y$ w.r.t. $\x$, $\pderiv{\y}{\x} = \bmat{
+	    \nabla_\x^\text{T} y_1\\
+	    \vdots \\
+	    \nabla_\x^\text{T} y_n}, \; \y\in\mathbb{R}^{n}$; matrix of all possible first order partial derivatives}
+\nomenclature[E, 10]{$\int f(\x)\,\text{d}\x$}{Definite integral over the domain of $\x$}
+\nomenclature[E, 11]{$\int_\mathcal{D} f(\x)\,\text{d}\x$}{Definite integral over the domain $\mathcal{D}$}
+
+\nomenclature[F, 01]{$a\sim p$}{$a$ is a random variable with distribution $p$}
+\nomenclature[F, 02]{$\text{E}\bra{f(x)}$}{Expectation of $f(x)$ with respect to $p(x)$; sometimes also $\text{E}\bra{f(x)}_{x\sim p(x)}$}
+\nomenclature[F, 03]{$\text{Var}\bra{f(x)}$}{Variance of $f(x)$ under $p(x)$}
+\nomenclature[F, 04]{$\text{Cov}\bra{f(x), g(x)}$}{Covariance of $f(x)$ and $g(x)$ under $p(x)$}
+\nomenclature[F, 05]{$D_\text{KL}\pa{p\mid\mid q}$}{Kullback-Leibler divergence of $p$ and $q$}
+\nomenclature[F, 06]{$D_\text{KL}\pa{p,q}$}{Symmetrized Kullback-Leibler divergence of $p$ and $q$}
+\nomenclature[F, 07]{$\mathcal{N}\pa{\x\mid\mub,\Sigmab}$}{Gaussian distribution over $\x$ with mean $\mub$ and covariance $\Sigmab$}
+
+\nomenclature[G, 01]{$f:\mathcal{D}\rightarrow\mathcal{C}$}{Function $f$ with domain $\mathcal{D}$ and co-domain $\mathcal{C}$}
+\nomenclature[G, 02]{$\log x$}{Natural logarithm of $x$}
+\nomenclature[G, 03]{$\text{ReLU}\pa{x}$}{Linear rectifier function, $\text{ReLU}\pa{x}=\max\cbra{0,x}$ (Rectified Linear Unit)}

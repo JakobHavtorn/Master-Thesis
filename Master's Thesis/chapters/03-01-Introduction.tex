@@ -1,0 +1,25 @@
+%!TEX root = ../Thesis.tex
+
+\section{Introduction}
+To train an \gls{NN}, some error function is defined and optimized. 
+Whenever this error function and the network itself are differentiable, it is beneficial to include information from the error gradient during optimization e.g. by the backpropagation algorithm. As briefly discussed in \autoref{chp: Introduction} however, some problems do not lend themselves to differentiable objective functions for various reasons.
+Some problems have discrete or random elements, e.g. in the model, while others don't easily or explicitly define an objective function such as \gls{RL}. 
+
+Two notable successes of \gls{DRL}, learning to play Atari games from pixels \cite{Mnih2015} and learning expert level Go \cite{Silver2016}, serve as examples that use the currently most popular methods for solving \gls{RL} problems. These all rely on the \gls{MDP} formalism and the use of value functions. They generally attempt to simplify and model the environment to a point where a differentiable error function can be defined and a value function, which encodes information about the value of every possible action given a state, can be learned by backpropagation of these errors.
+
+A completely different approach to \gls{DRL} is to instead use black-box optimization algorithms for directly learning a policy. When applied to \glspl{NN}, this approach has been called \textit{direct policy search} \cite{Schmidhuber1999} and in some versions \textit{neuroevolution} \cite{Risi2015}. The \gls{ES} presented recently by OpenAI in \cite{Salimans2017} is one such method.
+
+For the purpose of introduction, \autoref{sec: Theory: stochastic gradient by Taylor expoansion} derives the stochastic gradient estimator presented in \cite{Salimans2017} by Taylor expansion of the objective. It is described how the estimator can be implemented in practice by a Monte Carlo approximation and its bias and variance are evaluated. A second order estimator is then derived and an interpretation of the estimators as sample covariances is given. Finally, the estimators are generalized to the multivariate case.
+\autoref{sec: Variational optimization} introduces \gls{VO} which is a general framework for black-box optimization applicable to almost any function including the intangible reward function of \gls{RL}. \autoref{sec: Natural Gradient}, \ref{sec: Theory: Performance and robustness improving techniques} and \ref{sec: Theory: Methods for variance reduction} consider various methods for improving the \gls{VO} gradient estimators including the natural gradient, fitness transformation, inclusion of gradient information and methods for variance reduction.
+
+
+%In classical texts within e.g. operations research, such optimization problems fall in the category of non-differentiable optimization or non-smooth optimization. Alternative approaches to optimization include relaxation and coordinate-wise optimization \cite{Lemarechal1989}. Another approach to non-differentiable optimization is to use stochastic methods to approximate the objective gradient. 
+
+%The notation used previously for neural networks will be used again here. That is, $\y=NN(\x|\w)$ is the result of forward propagating an input $\x$ through a neural network, $NN$, with weights $\w$. Additionally, let $f(\y)$ be some loss or objective function computed on $\y$. The loss is then $f\pa{NN(\x|\w)}=f(\y|\w)$ or $f(\w)$, letting the input be implicit. In general $f(\y)$ can be both a regression loss such as the \gls{MSE} or negative log-likelihood, a typical classification loss such as the \gls{CEL} or a reinforcement learning reward function.
+
+
+%\begin{itemize}
+%    \item Let $\y=NN(\x|\w)$ be the result of forward propagating an input $\x$ through a neural network with weights $\w$.\\
+%    \item Let $f(\y)$ be some loss or objective function computed on $\y$\\
+%    \item The loss is then $f\pa{NN(\x|\w)}=f(\y|\w)$ or $f(\w)$, letting the input be implicit.\\
+%\end{itemize}

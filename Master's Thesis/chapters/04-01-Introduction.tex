@@ -1,0 +1,13 @@
+%!TEX root = ../Thesis.tex
+
+\section{Introduction}
+In addition to the theoretical work presented in the preceding chapters, this thesis has spent some effort on implementing and experimenting with the different methods, algorithms and augmentations. The algorithms have been implemented in Python using parts of the PyTorch deep learning library.
+Brief explanations and references to full code repositories are given in \autoref{app: implementations of algorithms}. The experiments were run on the \gls{HPC} cluster at DTU. This section presents the results of the experimental work. 
+
+\autoref{sec: Experimental work: Benchmarking} presents the problems used for the benchmarking and while the different \gls{NN} architectures used are described in \autoref{sec: Experimental work: Neural network architectures}. 
+The general computational complexity and scaling properties of the \gls{VO} algorithm are examined for both a supervised problem and a reinforcement learning problem in \autoref{sec: Experimental work: Computational scaling}.
+\autoref{sec: Experimental work: Effects of common model and algorithm augmentations} examines the influence of the model augmentations of batch normalization and dropout along with safe mutation.
+In \autoref{sec: Theory: Methods for variance reduction}, the different methods for reducing the variance of the gradient are examined- This includes gradient momentum in \ref{sec: Experimental work: Effect of momentum} and antithetic sampling in \ref{sec: Experimental work: Antithetic sampling}.
+Finally, the effect of adapting the variance using different Gaussian search distributions is evaluated in \autoref{sec: Experimental work: Effect of adapting the variance}.
+
+It should be noted that the number of hyperparameters combined with variations on the \gls{VO} algorithm gives a large number of potential experiments to conduct. This thesis has only performed a small subset of all the possible experiments. The chosen experiments were selected based on what had the highest potential to show improvement to the algorithm.

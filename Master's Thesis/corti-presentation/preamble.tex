@@ -1,0 +1,103 @@
+%!TEX root = ../Presentation.tex
+
+\documentclass[aspectratio=43]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+
+
+% Latin Modern
+\usepackage{lmodern}
+% Verdana font type
+%\usepackage{verdana}
+% Helvetica
+%\usepackage{helvet}
+% Times (text and math)
+%\usepackage{newtx, newtxmath}
+% Nice font combination
+%\usepackage{mathptmx} % math
+%\usepackage{sourcesanspro} % sans-serif
+\usepackage{charter} % serif
+\usepackage{hyperref}
+\usepackage[style=ieee, urldate=comp]{biblatex}
+%\usepackage{natbib}
+\usepackage{xpatch}
+\usepackage{url}
+\usepackage{adjustbox}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[justification=centering]{subcaption}
+\usepackage[justification=justified, singlelinecheck=false, labelfont=bf, skip=\baselineskip]{caption}
+\DeclareCaptionLabelFormat{bold}{\textbf{(#2)}}
+\captionsetup{subrefformat=bold}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage[acronym]{glossaries}
+\usepackage{upgreek}
+\usepackage{xfrac}
+\usepackage{csquotes}
+\usepackage{../preamble/cool}
+\usepackage{algorithm}				      % http://ctan.org/pkg/algorithms
+\usepackage{algpseudocode}			    % http://ctan.org/pkg/algorithmicx
+\algnewcommand\algorithmicinitialize{\textbf{Initialize:}}
+\algnewcommand\Initialize{\item[\algorithmicinitialize]}
+\algnewcommand\algorithmicinput{\textbf{Input:}}
+\algnewcommand\Input{\item[\algorithmicinput]}
+\algnewcommand\algorithmicoutput{\textbf{Output:}}
+\algnewcommand\Output{\item[\algorithmicoutput]}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+%\usepackage{color, colortbl}
+%\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}  %Support for using colours
+\usepackage{tikz}
+\usetikzlibrary{matrix,shapes,arrows,positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+
+\usepackage{minted}
+\usepackage{listings}
+\definecolor{LightGray}{gray}{0.97}
+\setminted[bash]{baselinestretch=1.1,bgcolor=LightGray,fontsize=\footnotesize,showspaces=false,breaklines=true}
+\setminted[python]{baselinestretch=1.1,tabsize=4,bgcolor=LightGray,fontsize=\footnotesize,showspaces=false,breaklines=true}
+
+%\newcommand{\tabitem}{{\color{dtured}$\bullet$}}
+\newcommand{\tabitem}{{\color{dtured}{\fontsize{3.5}{4.25}\selectfont $\blacksquare$} }}
+\newcommand{\sinc}{\text{sinc}}
+
+
+\usetheme[department=compute]{DTU}
+\setbeamertemplate{bibliography item}[triangle]
+\setbeamercolor{bibliography item}{fg=dtured}
+\setbeamertemplate{frametitle continuation}[from second]
+\renewcommand\bibfont{\scriptsize}
+\renewcommand{\glossarypreamble}{\scriptsize}
+%\bibliographystyle{apalike}
+
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+%\AtBeginSection{
+%\begingroup
+%\setbeamercolor{background canvas}{bg=dtured}
+%\frame{\usebeamerfont{title}\insertsectionhead\par}
+%\endgroup
+%}

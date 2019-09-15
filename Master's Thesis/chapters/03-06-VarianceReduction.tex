@@ -1,0 +1,418 @@
+%!TEX root = ../Thesis.tex
+
+
+
+\section{Methods for variance reduction}\label{sec: Theory: Methods for variance reduction}
+Monte Carlo estimators, such as the \gls{VO} gradient, are well-known to have high variance. However, many methods exist to alleviate this problem. This section considers such methods for reducing the variance of the \gls{VO} gradient estimator. First, \autoref{sec: Theory: Variance of CO estimator} derives the variance of the estimator. \autoref{sec: Theory: Antithetic sampling} derives and discusses antithetic sampling, \autoref{sec: Theory: Common random numbers} introduces the method of \gls{CRN} while \autoref{sec: Theory: Local reparameterization for variance reduction} applies a reparameterization and exploits the structure of \glspl{FNN} to obtain a lower variance estimator in a novel way.
+%while stratified sampling and \gls{RSS} are presented in \autoref{sec: Theory: Stratified sampling and recurrent stratified sampling}.
+%Finally, a more radical approach to variance reduction for \gls{VO} based on perturbing activations rather than weights is considered in \autoref{sec: Theory: Local reparameterization trick}.
+
+
+\subsection{Variance of VO estimators}\label{sec: Theory: Variance of CO estimator}
+%Another perspective on the effect of antithetic sampling can be taken by considering the variance of the \gls{VO} gradient estimator for a multivariate Gaussian search distribution. 
+% Consider the variance of the \gls{VO} gradient estimator for a multivariate Gaussian search distribution. 
+% This was derived for $\mub$ and $\Sigmab$ in \eqref{eq: Theory: Variational optimization multivariate gaussian gradient estimators}. Consider the gradient for $\mub$ and compute its variance as
+% \begin{equation}
+%     \text{Var}\left[\nabla_\mub U(\mub,\L)\right]
+%     = \text{Var}\left[\frac{1}{N}\sum_{n=1}^N f(\mub+\L\epsilonb_n)(\L^{-1})\transpose\epsilonb_n\right]
+% \end{equation}
+% where $\epsilonb\sim\mathcal{N}(\0,\I)$ as before. The variance can be expanded in variance and covariance terms. Let $g(\epsilonb_i) = f(\mub+\L\epsilonb_i)(\L^{-1})\transpose\epsilonb_i$ for compactness. Then,
+
+Consider the variance of the \gls{VO} gradient estimator for a general search distribution $p(\x|\thetab)$ which was derived in \eqref{eq: Theory: Variational optimization gradient estimator sampling general search distribution}. Consider the gradient for $\thetab$ and compute its variance as
+\begin{align}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)} = \text{Var}\bra{\frac{1}{N}\sum_{n=1}^N f(\epsilonb_n) \nabla_\thetab\log p(\epsilonb_n|\thetab)}
+\end{align}
+where $\epsilonb$ is used in place of $\x$ to stay in the perturbation terminology. The variance can be expanded in variance and covariance terms. Let $g(\epsilonb_n) = f(\epsilonb_n) \nabla_\thetab\log p(\epsilonb_n|\thetab)$ for compactness. Then,
+\begin{align} % https://en.wikipedia.org/wiki/Variance
+    \text{Var}\bra{\nabla_\thetab U(\thetab)} 
+    &= \text{Var}\left[\frac{1}{N}\sum_{n=1}^N g(\epsilonb_n)\right]\nonumber\\
+    &= \frac{1}{N^2}\sum_{i=1}^N\sum_{j=1}^N\text{Cov}\bra{g(\epsilonb_i),g(\epsilonb_j)}\nonumber\\
+    &= \frac{1}{N^2}
+    \underbrace{\sum_{i=1}^N \text{Var}\bra{g(\epsilonb_i)}}_\text{diagonal} + \frac{2}{N^2}
+    \underbrace{\sum_{i=1}^N\sum_{j=i+1}^N\text{Cov}\bra{g(\epsilonb_i), g(\epsilonb_j)}}_\text{off-diagonal}\label{eq: Theory: Variance of multivariate Gaussian variational optimization gradient estimator no matter the sampling}\\
+    &= \frac{1}{N}\text{Var}\bra{g(\epsilonb)} + \frac{2}{N^2}\sum_{i=1}^N\sum_{j=i+1}^N\text{Cov}\bra{g(\epsilonb_i), g(\epsilonb_j)}\label{eq: Theory: Variance of multivariate Gaussian variational optimization gradient estimator regular samplng}
+    %\frac{N-1}{N}\text{Cov}\bra{g(\epsilonb_i), g(\epsilonb_j)}\label{eq: Theory: Variance of multivariate Gaussian variational optimization gradient estimator}
+\end{align}
+when using regular sampling, $\epsilonb_i$ and $\epsilonb_j$ are \gls{IID} random variables and $\text{Cov}\bra{\epsilonb_i,\epsilonb_j}=0$ for all $i$ and $j$ where $i\ne j$. For the independence it holds more generally that $g(\epsilonb_i)$ and $h(\epsilonb_j)$ are independent for any functions $g$ and $h$. A simple argument for this is as follows: Since $\epsilonb_i$ contains no information about $\epsilonb_j$, neither will $g(\epsilonb_i)$ contain any information about $h(\epsilonb_j)$, and vice versa, regardless the functions.
+% With $g(\epsilonb_i) = f(\mub+\L\epsilonb_i)(\L^{-1})\transpose\epsilonb_i$ and $h(\epsilonb_j)=g(\epsilonb_j)$,
+With $g(\epsilonb_i) = f(\epsilonb_i) \nabla_\thetab\log p(\epsilonb_i|\thetab)$ and $h(\epsilonb_j)=g(\epsilonb_j)$,
+\begin{equation}
+     \text{Cov}\bra{g(\epsilonb_i), g(\epsilonb_j)} = 0 \ ,\quad \forall\;i,j \text{ with } i\ne j \ .
+\end{equation}
+The variance of the gradient estimate then reduces to include only the diagonal of the covariance matrix, i.e. the variances
+%\begin{equation}
+%    \text{Var}\left[\nabla_\mub U(\mub,\L)\right] = \frac{1}{N^2}\sum_{i=1}^N \text{Var}\bra{g(\epsilonb_i)}.
+%\end{equation}
+%Since $\epsilonb_i$ are \gls{IID} for all $i$, this simplifies to
+\begin{equation}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)} = \frac{1}{N} \text{Var}\bra{g(\epsilonb)} \ .\label{eq: Theory: Variance of regular Monte Carlo VO gradient estimator for arbitrary search distribution}
+\end{equation}
+Thus, the variance of the \gls{VO} gradient estimator is $\mathcal{O}(1/N)$ where $N$ is the number of perturbations. This result and the following results for antithetic sampling hold when considering a single batch example. The case of mini-batches with additive objective functions are considered in \autoref{sec: Theory: Local reparameterization for variance reduction}. 
+This result holds regardless of the choice of search distribution as long as the samples are \gls{IID}.
+
+
+\subsection{Antithetic sampling}\label{sec: Theory: Antithetic sampling}
+A simple but powerful method for variance reduction in stochastic estimation is that of antithetic sampling. This method was successfully applied for stochastic estimation of gradients using an isotropic Gaussian search distribution with fixed variance in \cite{Salimans2017} although no theoretical argument for its efficiency was provided.
+
+For every sampled path $\{\epsilon_1,\epsilon_2,\dots,\epsilon_n\}$, antithetic sampling simply consists of also taking the so-called antithetic or mirrored path.
+%defined by $\{-\epsilon_1,-\epsilon_2,\dots,-\epsilon_n\}$. 
+This effectively doubles the number of samples obtained by sampling which may be beneficial in it self in the case where sampling is expensive.
+
+Considering stochastic gradient estimation using a search distribution, the antithetic samples form a vector in the search space that points in the exact opposite direction of the original samples. Intuitively speaking, in the case that the original samples proved to give lower function values, the antithetic sampling then probes the opposite path and if it gives higher function values, the variance is reduced due to negative covariance. 
+
+% This intuition can be shown mathematically. 
+% Consider the task of estimating the derivative of a univariate objective function using the \gls{VO} approach resulting in an estimator like that in \eqref{eq: Theory: Taylor: Univariate gradient estimator from standard Gaussian} or \eqref{eq: Theory: Variational optimization univariate gaussian gradient estimators} repeated here for convenience
+% \begin{equation*}
+%     U'(\mu) = \frac{1}{\sigma}\text{E}\bra{f(\mu + \sigma\epsilon)\epsilon}
+% \end{equation*}
+
+% Now generate two samples $f(\mu + \sigma\epsilon_1)\epsilon_1$ and $f(\mu + \sigma\epsilon_2)\epsilon_2$ each resulting in their own estimate $\hat{U}_1'(\mu)$ and $\hat{U}_2'(\mu)$. An unbiased total estimate is then simply
+% \begin{equation}
+%     \hat{U}'(\mu) = \frac{\hat{U}_1'(\mu) + \hat{U}_2'(\mu)}{2}
+% \end{equation}
+% Notice however that the variance of this estimator is given by
+% \begin{equation}
+%     \text{Var}\bra{\hat{U}'(\mu)} = \frac{1}{4}\pa{\text{Var}\bra{\hat{U}_1'(\mu)} + \text{Var}\bra{\hat{U}_2'(\mu)} + 2\text{Cov}\bra{\hat{U}_1'(\mu), \hat{U}_2'(\mu)}}
+% \end{equation}
+% In the case that the sampled paths $\hat{U}_1'(\mu)$ and $\hat{U}_2'(\mu)$ have negative covariance, this reduces the variance compared to uncorrelated sample paths which would have $\text{Cov}\bra{\hat{U}_1'(\mu),\hat{U}_2'(\mu)}=0$. 
+
+For the \gls{IID} sampling, the covariance was shown to be zero. However, a negative covariance will result in a reduction of the variance compared to regular \gls{IID} sampling. If $\epsilonb_i$ and $\epsilonb_j$ are chosen to not all be independent, the covariance becomes nonzero.  
+One way to correlate the perturbations is to choose the mirrored perturbation given by $\tilde{\epsilonb}_i=c-\epsilonb_i$, for every $\epsilonb_i$, where $c$ is the center of symmetry of the search distribution. This is the method of antithetic sampling. 
+When the search distribution is symmetric around zero, as can for instance be made the case for any Gaussian perturbation by the reparameterization trick, $c=0$ and $\tilde{\epsilonb}_i=-\epsilonb_i$ to give
+\begin{equation}
+    \text{Cov}\bra{\epsilonb_i,\tilde{\epsilonb}_i} = \text{Cov}\bra{\epsilonb_i,-\epsilonb_i} = -\text{Var}\bra{\epsilonb_i} \ .
+%    &= \text{E}\bra{-\epsilonb_i\epsilonb_i\transpose} - \text{E}\bra{\epsilonb_i}\text{E}\bra{-\epsilonb_i}\nonumber\\
+%    &= -\text{E}\bra{\epsilonb_i\epsilonb_i\transpose}\nonumber\\
+%    &= -\text{Var}\bra{\epsilonb_i}
+\end{equation}
+%To not increase the total number of samples one should take for instance $\epsilonb_{i+1} = -\epsilonb_i$, in effect.
+%It should be noted that the indices $i$ and $j$ are not as in the covariance matrix being summed in \eqref{eq: Theory: Variance of multivariate Gaussian variational optimization gradient estimator} but merely represent antithetic pairs.
+To compute the total covariance between perturbations, $\text{Cov}\bra{g(\epsilonb_i), g(\epsilonb_j)}\;\forall i,j$, consider first the covariance between any antithetic pair, $\text{Cov}\bra{g(\epsilonb), g(\tilde{\epsilonb})}$. This is most easily done by decomposing $g(\cdot)$ in its odd and even components as follows. An even function $e$ satisfies $e(x)=e(-x)$ and an odd function $o$ satisfies $o(x)=-o(-x)$. It follows that any function, here $g$, can be decomposed into even and odd parts by writing
+\begin{subequations}
+    \begin{align}
+        g_e(\epsilonb) &= \frac{g(\epsilonb)+g(-\epsilonb)}{2}\label{eq: Theory: Antithetic sampling even and odd function decomposition definition a}\\
+        g_o(\epsilonb) &= \frac{g(\epsilonb)-g(-\epsilonb)}{2}\label{eq: Theory: Antithetic sampling even and odd function decomposition definition b}\\
+        g(\epsilonb) &= g_e(\epsilonb) + g_o(\epsilonb)\label{eq: Theory: Antithetic sampling even and odd function decomposition definition c}
+    \end{align}
+\end{subequations}
+where $g_e$ denotes the even component and $g_o$ denotes the odd. The even and odd components are orthogonal in the sense that $\int g_\text{e}(\epsilonb)g_\text{o}(\epsilonb)\,\text{d}\epsilonb = 0$. The covariance can then be calculated by the following manipulations.
+\begin{align}
+    \text{Cov}\bra{g(\epsilonb),g(-\epsilonb)}
+    &= \text{Cov}\bra{g_e(\epsilonb) + g_o(\epsilonb),g_e(-\epsilonb) + g_o(-\epsilonb)}\nonumber\\
+    %&= \text{Cov}\bra{g_e(\epsilonb), g_e(-\epsilonb)} + \text{Cov}\bra{g_o(\epsilonb), g_o(-\epsilonb)} + \text{Cov}\bra{g_e(\epsilonb), g_o(-\epsilonb)} + \text{Cov}\bra{g_o(\epsilonb), g_e(-\epsilonb)} \nonumber\\
+    %&= \text{Cov}\bra{g_e(\epsilonb), g_e(\epsilonb)} -     \text{Cov}\bra{g_o(\epsilonb), g_o(\epsilonb)} - \text{Cov}\bra{g_e(\epsilonb), g_o(\epsilonb)} + \text{Cov}\bra{g_o(\epsilonb), g_e(\epsilonb)} \nonumber\\
+    &= \text{Var}\bra{g_e(\epsilonb)} - \text{Var}\bra{g_o(\epsilonb)} \ .
+\end{align}
+% \begin{align}
+%     \text{Cov}\bra{g(\epsilonb),g(-\epsilonb)}
+%     &= \text{Cov}\bra{g_e(\epsilonb) + g_o(\epsilonb),g_e(-\epsilonb) + g_o(-\epsilonb)}\nonumber\\
+%     &= 
+%     \begin{aligned}[t]
+%         &\text{Cov}\bra{g_e(\epsilonb), g_e(-\epsilonb)} + 
+%         \text{Cov}\bra{g_o(\epsilonb), g_o(-\epsilonb)} \\
+%         & \quad + \text{Cov}\bra{g_e(\epsilonb), g_o(-\epsilonb)} + 
+%         \text{Cov}\bra{g_o(\epsilonb), g_e(-\epsilonb)}
+%     \end{aligned}
+%     \nonumber\\
+%     &= 
+%     \begin{aligned}[t]
+%         & \text{Cov}\bra{g_e(\epsilonb), g_e(\epsilonb)} - 
+%         \text{Cov}\bra{g_o(\epsilonb), g_o(\epsilonb)} \\
+%         & \quad - \text{Cov}\bra{g_e(\epsilonb), g_o(\epsilonb)} + 
+%         \text{Cov}\bra{g_o(\epsilonb), g_e(\epsilonb)}
+%     \end{aligned}
+%     \nonumber\\
+%     &= \text{Var}\bra{g_e(\epsilonb)} - \text{Var}\bra{g_o(\epsilonb)} \ .
+% \end{align}
+Evidently, the covariance is negative if the odd component has larger variance than the even component which results in lower total variance compared to \gls{IID} sampling.  
+Since the covariances are only nonzero for the antithetic pairs, the covariance matrix will be block diagonal with $2\times2$ blocks, assuming that the mirrored sample is introduced as $\epsilonb_{i+1} = -\epsilonb_i$ where $i\in[0,2,4,\dots,N/2]$ and $N$ is even. There will then be $N/2$ nonzero covariances in the lower triangular matrix such that \eqref{eq: Theory: Variance of multivariate Gaussian variational optimization gradient estimator regular samplng} reduces to
+\begin{align}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)_a}
+    &= \frac{1}{N}\text{Var}\bra{g(\epsilonb)} + \frac{1}{N}\text{Cov}\bra{g(\epsilonb), g(-\epsilonb)}
+\end{align}
+where $\nabla_\thetab U(\thetab)_a$ denotes the antithetic \gls{VO} gradient estimate.
+In fact, if $g_e(\epsilonb)=0$ such that $g(\epsilonb)=g_o(\epsilonb)$ is purely odd, then $\text{Cov}\bra{g_o(\epsilonb),g_o(-\epsilonb)} = - \text{Var}\bra{g_o(\epsilonb)}$ and $\text{Var}\bra{\nabla_\thetab U(\thetab)_a}=0$. 
+If instead $g(\epsilonb)=g_e(\epsilonb)$, then $\text{Var}\bra{\nabla_\thetab U(\thetab)_a}=2\text{Var}\bra{g_e(\epsilonb)}$. 
+\begin{equation}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)_a} = 
+    \begin{cases}
+        0 & \text{if } g(\epsilonb)=g_o(\epsilonb)\\
+        2\text{Var}\bra{g_e(\epsilonb)} & \text{if } g(\epsilonb)=g_e(\epsilonb)
+    \end{cases}\label{eq: Theory: Antithetic sampling best and worst cases}
+\end{equation}
+These two extremes are respectively the best and worst case scenarios for antithetic sampling. At best, the variance is reduced to zero and the gradient is exact after evaluating only at one pair of perturbations. At worst, the variance of the gradient is doubled.
+
+%\begin{equation}
+%    \text{Var}\left[\nabla_\mub U(\mub,\L)\right]
+%    &= \frac{1}{2}\text{Var}\bra{g_o(\epsilonb_i)} - \frac{1}{2} \text{Var}\bra{g_o(\epsilonb)} = 0.
+%\end{equation}
+%If $g$ is purely even then
+%\begin{equation}
+%    \text{Var}\left[\nabla_\mub U(\mub,\L)\right]
+%    &= \frac{1}{N}\text{Var}\bra{g_o(\epsilonb_i)} - \frac{N-1}{N} \text{Var}\bra{g_o(\epsilonb)} = 0.
+%\end{equation}
+
+Instead of writing the regular estimator and taking $\epsilonb_{i+1}=-\epsilonb_i$, alternatively one can write the antithetic \gls{VO} gradient estimate directly
+\begin{equation}\label{eq: Antithetic sampling: direct antitethetic estimate}
+    \nabla_\thetab U(\thetab)_a = \frac{1}{N}\sum_{n=1}^{N/2} g(\epsilonb_n) + g(-\epsilonb_n)
+\end{equation}
+where $N$ again must be an even integer. This can be written in terms of the even component of the function by \eqref{eq: Theory: Antithetic sampling even and odd function decomposition definition a} 
+\begin{equation}
+    \nabla_\thetab U(\thetab)_a = \frac{2}{N}\sum_{n=1}^{N/2} g_e(\epsilonb_n) \ .
+\end{equation}
+Now, the variance of the antithetic estimator becomes
+\begin{align}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)_a}
+    &= \frac{4}{N^2}\text{Var}\bra{\sum_{n=1}^{N/2} g_e(\epsilonb_n)}\nonumber\\
+    %&= \frac{4}{N^2}\sum_{i=1}^{N/2}\sum_{j=1}^{N/2}\text{Cov}\bra{g_e(\epsilonb_i),g_e(\epsilonb_j)}\nonumber\\
+    %&= \frac{4}{N^2}\sum_{i=1}^{N/2} \text{Var}\bra{g_e(\epsilonb_i)} + \frac{8}{N^2}\sum_{i=1}^{N/2}\sum_{j=i+1}^{N/2}\text{Cov}\bra{g_e(\epsilonb_i), g_e(\epsilonb_j)}\nonumber\\
+    &= \frac{4}{N^2}\sum_{n=1}^{N/2} \text{Var}\bra{g_e(\epsilonb_n)}\nonumber\\
+    %&= \frac{4N/2}{N^2}\text{Var}\bra{g_e(\epsilonb)}\nonumber\\
+    &= \frac{2}{N}\text{Var}\bra{g_e(\epsilonb)}
+\end{align}
+since the covariance is zero in this formulation. From \eqref{eq: Theory: Variance of regular Monte Carlo VO gradient estimator for arbitrary search distribution}, the variance of the ordinary \gls{VO} gradient estimator can similarly be split into even and odd function components which gives
+\begin{equation}
+    \text{Var}\bra{\nabla_\thetab U(\thetab)_a} = \frac{1}{N}\pa{\text{Var}\bra{g_e(\epsilonb)} + \text{Var}\bra{g_o(\epsilonb)}}
+\end{equation}
+since $\text{Cov}\bra{g_e(\epsilonb_n), g_o(\epsilonb_n)}=0$ due to orthogonality. Clearly then, antithetic sampling trades in the variance of the odd component for the variance of the even component. In summary one can write
+\begin{equation}
+    \bmat{\text{Var}\bra{\nabla_\thetab U(\thetab)}\\\text{Var}\bra{\nabla_\thetab U(\thetab)_a}} = \frac{1}{N}\bmat{1&1\\2&0}\bmat{\text{Var}\bra{g_e(\epsilonb)}\\\text{Var}\bra{g_o(\epsilonb)}}
+\end{equation}
+which is a generalization of \eqref{eq: Theory: Antithetic sampling best and worst cases}. Evidently, there is a potentially large variance reduction to gain from using antithetic sampling on a function that is primarily odd or at least has most of its variance in the odd component. 
+
+By expanding $g(\epsilonb)$ in a Taylor series and plugging it into \eqref{eq: Antithetic sampling: direct antitethetic estimate} there is another perspective to antithetic sampling to be noted. Consider the univariate case where $\epsilon$ is scalar. The argument holds for the multivariate case as well. The Taylor series can be written as
+\begin{equation}
+    g(\epsilon) = \sum_{i=0}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i \ .
+\end{equation}
+With $\tilde{\epsilon}=-\epsilon$ then
+\begin{align}
+    g(\epsilon) + g(\tilde{\epsilon})
+    &= g(\epsilon) + g(-\epsilon)\\
+    &= \sum_{i=0}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i + \sum_{i=0}^\infty \frac{g^\pa{i}(0)}{i!}\pa{-\epsilon}^i\\
+    &= \sum_{i=0}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i + \pa{\sum_{i=0,2,\dots}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i - \sum_{i=1,3,\dots}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i}\\
+    &= \sum_{i=0,2,\dots}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i + \sum_{i=0,2,\dots}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i\\
+    &= 2\sum_{i=0,2,\dots}^\infty \frac{g^\pa{i}(0)}{i!}\epsilon^i \ .
+\end{align}
+Clearly then, the antithetic sampling serves to cancel out odd derivatives of the Taylor series of $g$ while doubling the contribution of the even derivatives. 
+
+In \gls{VO}, the function $g$ is composed by the objective function $f$ multiplied by the perturbation $\epsilonb$. In the reinforcement learning setting, the objective is expected to exhibit some degree of anti-symmetry while it is unlikely to be purely odd. For instance, in highly symmetric mazes walking in the $x$ direction can be equivalent to walking in the $-x$ direction but generally it is not.
+This thesis will not attempt to analyze how anti-symmetry holds through the multiplication by $\epsilonb$ and perturbation of the \gls{NN} parameters by $\epsilonb$, however, it seems there is reason to conjecture that antithetic sampling may reduce the gradient estimate variance.
+
+An additional note can be made about the subspace spanned by the \gls{VO} perturbations when using antithetic sampling. Without antithetic sampling, $N$ random perturbations are likely to span an $N$ dimensional subspace of the $d$ dimensional search space. When using antithetic sampling, half of these perturbations are replaced by the negative of an already existing perturbation. As such, the antithetic perturbations are linearly dependent on the existing perturbations. Consequently, the subspace will be maximally $N/2$ dimensional for a population of $N$ perturbations.
+
+% \todo[inline]{Is $\epsilonb f(\x+\epsilonb)$ generally more odd than even?
+% The product of two even functions is an even function.
+% The product of two odd functions is an even function.
+% The product of an even function and an odd function is an odd function.
+% Derive this relation using Taylor approximation of $g(\dot)$}
+
+\iffalse
+The variance then becomes
+\begin{align}
+    \text{Var}\bra{\nabla_\mub U(\mub,\L)}
+    &= \text{Var}\bra{\frac{1}{N}\sum_{n=1}^{N/2} g(\epsilonb_n) + g(\tilde{\epsilonb}_n)}\nonumber\\
+    &= \frac{\L^{-1}}{N^2}\text{Var}\bra{\sum_{n=1}^{N/2} g(\epsilonb_n) + g(\tilde{\epsilonb}_n)}\nonumber\\
+    &= \frac{N/2}{N^2}\text{Var}\bra{g(\epsilonb) + g(\tilde{\epsilonb})}\nonumber\\
+    &= \frac{1}{2N}\pa{\text{Var}\bra{g(\epsilonb)} + \text{Var}\bra{g(\tilde{\epsilonb})} + 2\text{Cov}\bra{g(\epsilonb),g(\tilde{\epsilonb}}}\nonumber\\
+    &= \frac{1}{N}\pa{\text{Var}\bra{g(\epsilonb)} + 
+    \text{Cov}\bra{g(\epsilonb),g(\tilde{\epsilonb}}}\nonumber
+\end{align}
+
+
+Additionally, for $g(\epsilonb_i) = f(\mub+\L\epsilonb_i)\epsilonb_i$, if $g$ is odd, then $g(-\epsilonb_i)=-g(\epsilonb_i)$ and
+\begin{equation}
+    \text{Cov}\bra{g(\epsilonb_i),g(-\epsilonb_i)} = \text{Cov}\bra{g(\epsilonb_i),-g(\epsilonb_i)} = -\text{Var}\bra{g(\epsilonb_i)} \ .
+\end{equation}
+Obviously it cannot be assumed that $g$ is an entirely odd function. However, any function can be decomposed into even and odd parts which are orthogonal. That is, one can write
+
+$\text{Cov}\bra{f(\mub+\L\epsilonb_i)\epsilonb_i, f(\mub+\L\epsilonb_j)\epsilonb_j}$
+% \nabla_\mub U(\mub,\L) &= (\L^{-1})\transpose\text{E}\bra{f(\mub+\L\epsilonb)\epsilonb} \approx \frac{\L^{-1}}{N}\sum_{n=1}^N f(\mub+\L\epsilonb)\epsilonb
+
+
+\begin{align} % https://en.wikipedia.org/wiki/Variance
+    \text{Var}\left[f'(x)\right]
+    &= \text{Var}\left[\frac{1}{N\sigma}\sum_{n=1}^N f(x+\sigma\hat{\epsilon}_n)\hat{\epsilon}_n\right]\nonumber\\
+    &= \frac{1}{N^2\sigma^2}\sum_{i=1}^N\sum_{j=1}^N\text{Cov}\bra{f(x+\sigma\hat{\epsilon_i}}\hat{\epsilon_i}, \bra{f(x+\sigma\hat{\epsilon_i}}\hat{\epsilon_i}\\
+    &= \frac{1}{N^2\sigma^2}\pa{\sum_{i=1}^N \text{Var}\left[f(x+\sigma\hat{\epsilon}_i)\hat{\epsilon}_i\right] + 2\sum_{i=1}^N\sum_{j=i+1}^N\text{Cov}\bra{f(x+\sigma\hat{\epsilon_j}}\hat{\epsilon_j}, \bra{f(x+\sigma\hat{\epsilon_i}}\hat{\epsilon_i}}
+\end{align}
+
+
+Consider the task of estimating
+\begin{equation}
+    \theta = \text{E}\bra{Y}
+\end{equation}
+from samples of $Y=h(X)$. Now generate two samples $Y_1$ and $Y_2$ each resulting in their own estimate $\hat{\theta_1}$ and $\hat{\theta_2}$. An unbiased total estimate is then simply
+\begin{equation}
+    \hat{\theta} = \frac{\hat{\theta_1} + \hat{\theta_2}}{2}
+\end{equation}
+Notice however that the variance of this estimator is given by
+\begin{equation}
+    \text{Var}\bra{\hat{\theta}} = \frac{\text{Var}\bra{Y_1} + \text{Var}\bra{Y_2} + 2\text{Cov}\bra{Y_1,Y_2}}{4} \ .
+\end{equation}
+In the case that the sampled paths $Y_1$ and $Y_2$ have negative covariance, this reduces the variance compared to uncorrelated sample paths which would have $\text{E}\bra{\text{Cov}\bra{Y_1,Y_2}}=0$. That is, the variance reduction originates from the assumption that negative covariance between the sampled paths results in negative covariance between the function values.
+\fi
+
+
+
+
+
+
+
+
+
+
+\subsection{Common random numbers}\label{sec: Theory: Common random numbers}
+The method of \gls{CRN} is usually applied when comparing two or more stochastic simulations of some system for a some different sets of hyperparameters. The simulations are then made such that any stochastic elements of the systems share the same seed for all the simulations. That is, the stochastic elements in each simulation are identical, at least initially. For instance, if random noise is added in an otherwise deterministic simulation of a system, the sequence of random numbers that represent the noise is the same for all the simulations. The simulations may still differ due to the different hyperparameter settings.  The reduced amount of randomness in turn reduces variance \cite{Glasserman2003}.
+
+In the application of \gls{VO} to supervised learning, the method of \gls{CRN} translates to evaluating each of the perturbations on the same mini-batch of training examples. Specifically, in classification, if the batch over-represents some class which the model is particularly bad at correctly classifying, any perturbation that outperforms the others has a good chance of improving on classifying that class. If the batches were different, some models may be evaluated too harshly due to being handed a difficult batch compared to the batches given to other perturbations.
+
+In the \gls{RL} setting, it corresponds to evaluating the perturbations on environments which have been seeded such that they have the same initial condition. In \gls{RL}, the episodes that follow may be quite different despite the shared initial state due to the different policies represented by the perturbed networks.
+ 
+
+
+
+
+\subsection{Local reparameterization}\label{sec: Theory: Local reparameterization for variance reduction}
+The local reparameterization method \cite{Kingma2015a} was presented as a means of reducing the variance of the \gls{SGVB} method \cite{Kingma2013} which seeks to perform efficient approximate inference and learning in directed graphical models in the fully Bayesian setting. Here, the approach is applied to reduce the variance of the \gls{VO} estimator. This section describes an untried idea that should be subject to further analysis and experimental validation.
+
+\subsubsection{An alternative Monte Carlo estimator for the upper bound}
+The local reparameterization is useful in situations where the objective $f(\x)$ is composed of a sum of individual terms, typically averaged. Then
+\begin{equation}
+    f(\x)=\frac{1}{\size{\mathcal{B}}}\sum_{b\in\mathcal{B}}f_b(\x)
+\end{equation}
+where $f_i(\x)$ denotes the objective evaluated at the network with parameters $\x$ on the $b$'th batch example. 
+This is the case for error functions in supervised learning \eqref{eq: Neural networks: Error as a sum over individual terms}. 
+In such a case, the \gls{VO} upper bound can be rewritten as
+\begin{equation}
+    U(\thetab) = \text{E}\bra{f(\x)}_{p(\x|\thetab)} = \frac{1}{\size{\mathcal{B}}}\sum_{b\in\mathcal{B}}\text{E}\bra{f_b(\x)}_{p(\x|\thetab)} \ .
+\end{equation}
+An unbiased Monte Carlo estimator for $U(\thetab)$ is then % Although the gradient of $U(\thetab)$ is
+\begin{equation}\label{eq: Theory: Local reparameterization: U estimator, reused weights for each example}
+    U(\thetab) \approx \frac{1}{N\size{\mathcal{B}}}\sum_{n=1}^N\sum_{b\in\mathcal{B}}f_b(\x_n)
+\end{equation}
+which is effectively the same result as previously seen for the gradient. However, rather than using the same weights for all examples in a batch, one can now sample new weights for each example. This results in the following alternative unbiased Monte Carlo estimator.
+\begin{equation}\label{eq: Theory: Local reparameterization: U estimator, new weights for each example}
+    \tilde{U}(\thetab) \approx \frac{1}{N\size{\mathcal{B}}}\sum_{n=1}^N\sum_{b\in\mathcal{B}}f_b(\x_{bn}) \ .
+\end{equation}
+
+\subsubsection{Variance of the upper bound estimators}
+The variance of the estimator in \eqref{eq: Theory: Local reparameterization: U estimator, reused weights for each example} is
+\begin{align}
+    \text{Var}\bra{U(\thetab)}
+    &= \frac{1}{N^2\size{\mathcal{B}}^2}\sum_{n,n'=1}^N\sum_{b,b'\in\mathcal{B}}\text{Cov}\bra{f_b(\x_n),f_{b'}(\x_{n'})}\nonumber\\
+    &= \frac{1}{N^2\size{\mathcal{B}}^2}\sum_{n=1}^N\sum_{b\in\mathcal{B}}\text{Var}\bra{f_b(\x_n)} + \frac{1}{N^2\size{\mathcal{B}}^2}\sum_{\substack{n,n'=1\\n\ne n'}}^N\sum_{\substack{b,b'\in\mathcal{B}\\b\ne b'}}\text{Cov}\bra{f_b(\x_n),f_{b'}(\x_{n'})}\nonumber\\
+    &= \frac{1}{N\size{\mathcal{B}}^2}\sum_{b\in\mathcal{B}}\text{Var}\bra{f_b(\x)} + \frac{N-1}{N\size{\mathcal{B}}^2}\sum_{\substack{b,b'\in\mathcal{B}\\b\ne b'}}\text{Cov}\bra{f_b(\x),f_{b'}(\x)}\nonumber\\
+    &= \frac{1}{N\size{\mathcal{B}}}\text{Var}\bra{f_b(\x)} + \frac{N-1}{N}\frac{\size{\mathcal{B}}-1}{\size{\mathcal{B}}}\text{Cov}\bra{f_b(\x),f_{b'}(\x)}
+\end{align}
+where it is used that the within-batch covariance is the same on average, as for the perturbations.
+This result may at first seem to contradict \eqref{eq: Theory: Variance of regular Monte Carlo VO gradient estimator for arbitrary search distribution} but in fact does not. 
+In \eqref{eq: Theory: Variance of regular Monte Carlo VO gradient estimator for arbitrary search distribution}, only a single batch-example was considered while here, an entire mini-batch is studied including the potentially non-zero between-batch covariance. It should be noted that the variance scales as $\mathcal{O}\pa{1/N\size{\mathcal{B}}}$ while the covariance scales as $\mathcal{O}(1)$ for large enough $N$ and $\size{\mathcal{B}}$ and as such effectively lower bounds $\text{Var}\bra{U(\thetab)}$.
+
+By the same manipulations, the variance of the estimator in \eqref{eq: Theory: Local reparameterization: U estimator, new weights for each example} that samples new parameters for each batch example is
+\begin{equation*}
+    \text{Var}\bra{\tilde{U}(\thetab)}
+    = \frac{1}{N\size{\mathcal{B}}}\text{Var}\bra{f_b(\x_{b})} + \frac{N-1}{N}\frac{\size{\mathcal{B}}-1}{\size{\mathcal{B}}} \text{Cov}\bra{f_b(\x_{b}),f_{b'}(\x_{b'})}
+\end{equation*}
+but here it is noted that the covariance term can be rewritten
+\begin{align}
+    \text{Var}\bra{\tilde{U}(\thetab)}
+    &= \frac{1}{N\size{\mathcal{B}}}\text{Var}\bra{f_b(\x_{b})} + \frac{N-1}{N}\frac{\size{\mathcal{B}}-1}{\size{\mathcal{B}}}\text{E}\bra{\pa{f_b(\x_{b})-U_b}\pa{f_{b'}(\x_{b'})-U_{b'}}}_{p(\x_b|\thetab),p(\x_{b'}|\thetab)}\nonumber\\
+    &= \frac{1}{N\size{\mathcal{B}}}\text{Var}\bra{f_b(\x_{b})} + \frac{N-1}{N}\frac{\size{\mathcal{B}}-1}{\size{\mathcal{B}}}\pa{\text{E}\bra{f_b(\x_{b})}_{p(\x_b|\thetab)}-U_b}\pa{\text{E}\bra{f_{b'}(\x_{b'})}_{p(\x_{b'}|\thetab)}-U_{b'}}\nonumber\\
+    &= \frac{1}{N\size{\mathcal{B}}}\text{Var}\bra{f_b(\x_{b})}
+\end{align}
+where $U_b = \text{E}\bra{f_{b}(\x_{b})}_{p(\x_b|\thetab)}$. The covariance term is zero in the alternative estimator that samples new parameters for the model for each batch example.
+
+
+\subsubsection{Propagation of a distribution over activations}
+The derivation made to give \eqref{eq: Theory: Variational optimization gradient estimator sampling general search distribution} is followed again to obtain the Monte Carlo estimator for the gradient of the alternative estimator, 
+\begin{equation}
+    \nabla_\thetab \tilde{U}(\thetab) \approx \frac{1}{N\size{\mathcal{B}}}\sum_{n=1}^N\sum_{b\in\mathcal{B}}f_b(\x_{bn})\nabla_\thetab\log p(\x_{bn}|\thetab) \ ,
+\end{equation}
+where $x_{b,n}\sim p(\x_{b,n}|\thetab)$. From a computational point of view this estimator is not very efficient and especially not for modern deep learning software which is optimized to evaluate a single network on $\size{\mathcal{B}}$ training examples. The advantage of the formulation is that the variance of the estimator is reduced from $\mathcal{O}(1)$ to $\mathcal{O}(1/N\size{\mathcal{B}})$ because each term is evaluated on an independent realization of the parameters \cite{Kingma2015a}. 
+
+
+To achieve computational efficiency, it is exploited that \gls{FNN} models depend upon the weights and biases only through the activations, $\Z^\bra{l}=\W^\bra{l}\A^\bra{l-1}$ where $\A^\bra{l}=\varphi\pa{\Z^\bra{l}}$, as discussed in \autoref{chp: Neural networks}. In elementwise notation this becomes $Z^\bra{l}_{ib}=\sum_jW^\bra{l}_{ij}A^\bra{l-1}_{jb}$, where $Z^\bra{l}_{ib}$ is the $i$'th element in the $l$'th layer activation of the $b$'th batch example.
+The following will consider the isotropic Gaussian search distribution $p(\W|\thetab)=\mathcal{N}\pa{\W|\mub,\sigma^2\I}$ with $\thetab=\cbra{\mub, \sigma^2}$ and sample by reparameterization, $\W=\mub+\sigma\epsilonb, \epsilonb\sim\mathcal{N}(\0,\I)$.
+The distribution of the activations can be inferred from the distribution of the weights drawn for each training example. Taking $\mub$ and $\sigma$ to be matrices of same shape as $\W$, this distribution is
+\begin{equation}\label{eq: Theory: Variance reduction: Inferred distribution of activations for local reparameterization trick}
+    q\pa{Z_{ib}^\bra{l} \;\middle|\; \A^\bra{l-1},\thetab} = \mathcal{N}\left(Z_{ib}^\bra{l} \;\middle|\; \sum_j \mu_{ij}^\bra{l} A_{jb}^\bra{l-1}, \sum_j \sigma^{\bra{l}^2}_{ij} A^{\bra{l-1}^2}_{jb}\right) = \mathcal{N}\left(Z_{ib}^\bra{l} \;\middle|\; m_{ib}^\bra{l}, v_{ib}^\bra{l}\right)
+\end{equation}
+where $m_{ib}$ and $v_{ib}$ are respectively the mean and variance of the Gaussian activation distribution. 
+By letting $\Z_{bn}$ denote the stacked vector of activations of all layers of the $b$'th batch example and $n$'th perturbation\footnote{Strictly speaking, here $\Z$ is a third order tensor with elements $Z_{ibn}$ denoting the $i$'th element of the $b$'th batch example activation for the $n$'th perturbation. Activation vectors of all layers are then stacked into a single dimension, $i$.} and similarly for $\A_{bn}$ then
+\begin{equation}
+\label{eq:gradient2}
+    \nabla_\thetab \tilde{U}(\theta) \approx \frac{1}{N\size{\mathcal{B}}} \sum_{n=1}^N\sum_{b\in\mathcal{B}} f_b(\Z_{bn}) \nabla_\thetab
+    \log q(\Z_{bn}|\A_{bn},\thetab) \ ,
+\end{equation}
+where $Z_{ibn} = m_{ib} + \sqrt{v_{ib}}\,\xi_{ibn}$, with $\xi_{ibn}\sim\mathcal{N}(0,1)$ and $f(\Z)$ is the error function from above now written in terms of the activations.
+With this, the Monte Carlo estimates for the derivatives are
+\begin{equation}\label{eq: Theory: Local reparameterization: Gradient of upper bound isotropic/full Gaussian}
+    \begin{aligned}
+        \pderiv{\tilde{U}(\thetab)}{\mu_{ij}^\bra{l}} &\approx \frac{1}{N\size{\mathcal{B}}} \sum_{n=1}^N\sum_ {b\in\mathcal{B}} f_b(\Z_{bn}) \frac{\xi_{ibn}}{\sqrt{v_{ib}^\bra{l}}} A_{jb}^\bra{l-1} \\
+        \pderiv{\tilde{U}(\thetab)}{\sigma_{ij}^{\bra{l}^2}} &\approx \frac{1}{N\size{\mathcal{B}}} \sum_{n=1}^N\sum_ {b\in\mathcal{B}} f_b(\Z_{bn}) \frac{\xi_{ibn}^2 - 1}{2 v_{ib}^\bra{l}} A_{jb}^{\bra{l-1}^2} \ .
+    \end{aligned}
+\end{equation}
+
+The complexity of a forward pass with this new approach is $\mathcal{O}\pa{N\size{\mathcal{B}}\size{\Z}}$ where $\size{\Z}$ is the number of activations/units in the network. The batch can be efficiently forward propagated in a single pass as described in \autoref{chp: Neural networks}. For comparison, the original approach has a complexity of $\mathcal{O}\pa{N\size{\W}}$ while a naive implementation of local reparameterization has a complexity of $\mathcal{O}\pa{N\size{\mathcal{B}}\size{\W}}$ and additionally requires a forward pass for each batch example which is less efficient than the new approach. The local reparameterization thus improves computational efficiency by sampling activations rather than weights.
+
+With $\A^\bra{0} = \X$, the forward pass in an \gls{FNN} is %$Z^\bra{l}_{ib} = m^{(l)}_{ib} + \sqrt{v^{(l)}_{ib}} \xi^{(l)}_{ib}$ or 
+\begin{subequations}
+    \begin{align}
+        \m^\bra{l} & = \mub^\bra{l} \A^\bra{l-1} \\
+        \v^\bra{l} & = \left( \sigmab^\bra{l} \A^\bra{l-1}\right)^2 \\
+        \Z^\bra{l} & = \m^\bra{l} + \sqrt{\v^\bra{l}} \odot \xib^\bra{l}\\
+        \A^\bra{l} &= \varphi\pa{\Z^\bra{l}} \ ,
+    \end{align}
+\end{subequations}
+when vectorized appropriately\footnote{The activation mean and variance $\m^\bra{l}$ and $\v^\bra{l}$ both have dimensions of $\A^\bra{l}$. The unperturbed network is parameterized by $\mub^\bra{l}$ which has dimensions of $\W^\bra{l}$; as has the associated perturbation variance $\sigmab^2$.}. This effectively forward propagates a distribution over activations without realizing the perturbed weights explicitly and instead perturbs the activations.
+
+
+\subsubsection{Alternative gradient estimator variance}
+In addition to improving computational efficiency, the local reparameterization also reduces the variance of the gradient estimator. Comparing the estimators in \eqref{eq: Theory: Local reparameterization: Gradient of upper bound isotropic/full Gaussian} with the ones derived earlier for the isotropic Gaussian in \eqref{eq: Theory: Variational optimization multivariate isotropic gaussian gradient estimators} it is evident that they are similar but the alternative version derived here perturbs in the activation space rather than the weight space. 
+As was discussed in \autoref{sec: Theory: Taylor expansion interpretation of derivatives as covariances}, estimating the gradient has an interpretation as estimating the covariance between the objective and the perturbations. Since the alternative estimator based on the local reparameterization perturbs the activation space its search space has much fewer dimensions. These and their respective perturbations will then individually have much higher correlation with the objective and so the covariance, and hence the gradient, will be easier to accurately estimate \cite{Kingma2015a}.
+
+
+\subsubsection{Relation to batch normalization}
+Batch normalization was introduced in \autoref{chp: Neural networks}. The local reparameterization derived here is not directly affected by the normalization applied to the activations by batch normalization. Likewise, batch normalization is not affected by the forward propagation of a distribution over activations and can simply be applied to these activations as usual.
+
+In fact, it seems that batch normalization can benefit from the local reparameterization by exploiting the already computed mean and variance of the activations. That is, \eqref{eq: Neural networks: Batch normalization: Mean} and \eqref{eq: Neural networks: Batch normalization: Variance} can be replaced with
+\begin{equation}
+    \overline{\m}  = \text{E}\left[\m\right]_{p(\Z|\A)} = \frac{1}{\size{\mathcal{B}}} \sum_{b\in\mathcal{B}} \m_{b}
+\end{equation}
+and
+\begin{equation}
+    \overline{\v}  = \text{E}\left[\v\right]_{p(\Z|\A)} = \frac{1}{\size{\mathcal{B}}} \sum_{b\in\mathcal{B}} \left( \v_b + \pa{\m_b - \overline{\m}}^2 \right) +\mathcal{O}(\size{\mathcal{B}}^{-1})
+\end{equation}
+respectively, for each layer. This results in slightly reduced computation required since the running mean variance are no longer required although a mean is still computed over the activations. 
+
+
+\subsubsection{Remarks on application to convolutional neural networks}
+In a \gls{CNN}, the same kernel is applied across the entire input which results in the activations of a \gls{CNN} layer being highly correlated. The covariance between input pixels $i$ and $i'$ will be $\sum_j \sigma^2_j A_{jb} A_{j'b}$ where $j$ are the pixels in the input corresponding to pixel $i$ in the feature map.
+A single sample of the feature map activations thus requires diagonalizing a covariance matrix of size $\pa{\#\text{pixels}\times\#\text{pixels}}$. 
+This is rather inefficient even if structure in the matrix can be exploited.
+Therefore, it seems better to stick with the original approach for convolutional layers of the network.
+
+
+
+
+% \subsection{Stratified sampling and recurrent stratified sampling}\label{sec: Theory: Stratified sampling and recurrent stratified sampling}
+% \todo[inline]{(Write about stratified sampling)}
+% \gls{BSS}
+
+% \gls{RSS}
+
+% % http://www.aip.de/groups/soe/local/numres/bookcpdf/c7-8.pdf
+
+% % https://pdfs.semanticscholar.org/f260/6f334bd4865b105005b887478003ce9bd3e2.pdf
+
+% % http://users-phys.au.dk/tberg/numeric/project/bo.pdf
+
+% \cite{Press2007}
+
+
+
+% %\section{Curiosity driven optimization}
+% %\todo[inline]{Examine curiosity driven optimization using a GP to fit to the fitnesses and perturbations}
+% %Using \glspl{GP} to fit to the samples and fitness values and compute expected fitness.
+% %\cite{Schaul2011a}
+

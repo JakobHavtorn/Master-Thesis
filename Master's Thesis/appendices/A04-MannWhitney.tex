@@ -1,0 +1,47 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Weighted Mann-Whitney U-test}\label{app: Weighted Mann-Whitney U-test)}
+This appendix defines the weighted Mann-Whitney as it is introduced in \cite{Schaul2011a} for use in adaptation sampling. 
+
+\section{Regular Mann-Whitney U-test}
+The regular Mann-Whitney U-test seeks to determine if it is equally likely that a random sample from the set $S=\{s_i\}_{i=1}^{n}$ will be less than or greater than a random sample from a second set $S′=\{s'_i\}_{i=1}^{n'}$ \cite{Mann1947}. To this end, the so-called U-test statistic is computed
+\begin{equation}
+    U = \sum_{s_i > s_j'} 1 + \sum_{s_i=s_j'} \frac{1}{2},\quad \forall i,j
+\end{equation}
+For large samples, $U$ is approximately normally distributed and a standardized statistic can be computed from the estimated mean and standard deviation of $U$. Let
+\begin{gather}
+    \mu = \frac{nn'}{2}\\
+    \sigma = \sqrt{\frac{nn'(n+n'+1)}{12}}
+\end{gather}
+respectively be the mean and standard deviation estimates of $U$. The standardized statistic is then
+\begin{equation}
+    z = \frac{U-\mu}{\sigma}
+\end{equation}
+The two samples are different with confidence $\rho$ if either
+\begin{equation}
+    \begin{cases}
+        z > 1-\rho, & S \text{ has larger values}\\
+        z < \rho, & S' \text{ has larger values.}
+    \end{cases}
+\end{equation}
+
+
+\section{Weighted Mann-Whitney U-test}
+The generalization provided by \cite{Schaul2011a} introduces weights associated with each of samples in the two sets. Specifically, the sets are now
+\begin{equation}
+    S = \{(w_i,s_i\}_{i=1}^{n}, \quad
+    S' = \{(w_i',s_i'\}_{i=1}^{n}
+\end{equation}
+for positive weights $w_i, w'_i\geq0$. The Mann-Whitney test is then generalized by interpreting these weights as fractional occurrence counts. 
+The weighted U-test statistic then becomes
+\begin{equation}
+    U = \sum_{s_i > s_j'} w_i w_j' + \sum_{s_i=s_j'} \frac{1}{2} w_i w'_j, \quad \forall i,j.
+\end{equation}
+The number of samples in each set must then be corrected according to the interpretation of the weights
+\begin{equation}
+    m = \sum_{i=1}^n w_i, \quad
+    m' = \sum_{i=1}^{n'} w_i',
+\end{equation}
+and $\mu$ and $\sigma$ computed with $m$ and $m'$ rather than $n$ and $n'$.
+
+It can be noted that for unit weights, the weighted Mann-Whitney test corresponds to the regular Mann-Whitney test. Additionally, it can be seen that an integer weighted sample, $(w_i,s_i)$ with $w\in\mathbb{N}$, can be replaced by $w_i$ occurrences of the same sample with unit weight.

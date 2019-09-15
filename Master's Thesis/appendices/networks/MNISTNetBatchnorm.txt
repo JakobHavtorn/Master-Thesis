@@ -1,0 +1,19 @@
+     class_name       input_shape      output_shape            weight_shapes  n_parameters  n_trainable                                                                settings
+1   Conv2d       (-1, 1, 28, 28)   (-1, 10, 24, 24)  [(10, 1, 5, 5), (10,)]   260           260          {'stride': (1, 1), 'padding': (0, 0)}                                 
+2   BatchNorm2d  (-1, 10, 24, 24)  (-1, 10, 24, 24)  [(10,), (10,)]           20            20           {'affine': True, 'momentum': 0.1}                                     
+3   MaxPool2d    (-1, 10, 24, 24)  (-1, 10, 12, 12)  []                       0             0            {'stride': (2, 2), 'kernel_size': (2, 2), 'padding': 0, 'dilation': 1}
+4   ReLU         (-1, 10, 12, 12)  (-1, 10, 12, 12)  []                       0             0            -                                                                     
+5   Conv2d       (-1, 10, 12, 12)  (-1, 20, 8, 8)    [(20, 10, 5, 5), (20,)]  5020          5020         {'stride': (1, 1), 'padding': (0, 0)}                                 
+6   BatchNorm2d  (-1, 20, 8, 8)    (-1, 20, 8, 8)    [(20,), (20,)]           40            40           {'affine': True, 'momentum': 0.1}                                     
+7   MaxPool2d    (-1, 20, 8, 8)    (-1, 20, 4, 4)    []                       0             0            {'stride': (2, 2), 'kernel_size': (2, 2), 'padding': 0, 'dilation': 1}
+8   ReLU         (-1, 20, 4, 4)    (-1, 20, 4, 4)    []                       0             0            -                                                                     
+9   Linear       (-1, 320)         (-1, 50)          [(50, 320), (50,)]       16050         16050        -                                                                     
+10  BatchNorm1d  (-1, 50)          (-1, 50)          [(50,), (50,)]           100           100          {'affine': True, 'momentum': 0.1}                                     
+11  ReLU         (-1, 50)          (-1, 50)          []                       0             0            -                                                                     
+12  Linear       (-1, 50)          (-1, 10)          [(10, 50), (10,)]        510           510          -                                                                     
+13  LogSoftmax   (-1, 10)          (-1, 10)          []                       0             0            -                                                                     
+
+Parameters: 22000
+Trainable parameters: 22000
+Layers: 13
+Trainable layers: 7

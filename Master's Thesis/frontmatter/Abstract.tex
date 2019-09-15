@@ -1,0 +1,46 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Abstract}
+%Deep learning is a subfield of modern machine learning concerned with learning data representations using many layered nonlinear hierarchical models drawing inspiration from cognitive neuroscience. Each layer of a model is trained to learn increasingly complicated representations by building on representations learned by preceding layers that ultimately take raw data as input somewhat alike the function of neurons in the mammalian neocortex.
+
+%Training these neural networks is commonly done using the backpropagation algorithm which sends error signals backwards through the network to update the learned representation based on examples from data set. This backpropgation requires the definition of a differentiable error function and a differentiable network. 
+
+%In the reinforcement learning setting a network is trained in a control task through trial and error. Here, commonly used error functions rely on simplifying assumptions about the learning setting which can significantly slow down learning in environments with long episodes and long-lasting correlations between states and actions.
+
+%In other cases, the model is itself inherently non-differentiable and backproapgation is not applicable. This is the case for discrete latent variable models such as discrete variational autoencoders. 
+
+%In these cases, a different class of black-box optimization algorithms have recently been shown to be competitive choice. These \textit{evolution strategies} dispense with the need for an error function and rely solely on the reward signal from the environment to estimate a policy gradient. 
+
+%As such, the model itself may include non-differentiable layers.
+
+This thesis presents evolution strategies as a competitive alternative to classical methods for reinforcement learning and unifies previous work within black-box optimization with deep learning. It presents \textit{variational optimization} as an encompassing mathematical framework, which maintains a search distribution over the optimized parameters during training, and describes how it can be efficiently applied for optimization of neural networks without the use of backpropagation.
+\newline
+The natural gradient is derived and implemented as a way to update a search distribution subject to a similarity constraint w.r.t. the previous iterate. It is shown to be superior to using the regular gradient, especially when adapting the variance of a Gaussian search distribution.
+\newline
+Antithetic sampling and the method of common random numbers are derived and applied to reduce the variance of the gradient. Experiments run primarily in the supervised setting on the MNIST dataset show that while antithetic sampling is rather efficient at achieving this goal, common random numbers is not. A novel approach for reduction of gradient variance as well as computation based on a local reparameterization of feedforward neural networks is presented and treated theoretically.
+\newline
+Different search distributions based on the Gaussian are derived and implemented and the effect of adapting the mean and variance is compared to adapting only the mean which parameterizes the network parameters.
+It is found that while using an isotropic Gaussian with fixed variance provides good results, adapting the variance can lead to divergence. 
+Separable Gaussians with a variance per network layer or per network weight are shown to perform similarly to using a fixed variance but not significantly better. These results are discussed and related to the geometry of the loss surface.
+\newline
+\newline
+\textbf{Keywords:} Variational optimization; Search distribution; Monte Carlo; Natural gradient; Fischer information; Sensitivity analysis; Variance reduction; Antithetic sampling; Local reparameterization; Deep learning
+
+
+% \todo[inline]{Finish writing abstract}
+
+% Introduction.
+%  - networks
+%  - optimization
+% Methodology. 
+%  - stochastic estimation
+% Results 
+%  - mathematical framework
+%  - natural gradient
+%  - variance reduction
+%  - adapting the variance
+% And
+% Discussions
+
+
+% primary focus on supervised learning

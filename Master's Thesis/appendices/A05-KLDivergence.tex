@@ -1,0 +1,43 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Regular and symmetrized Kullback-Leibler divergence for Gaussian}\label{app: Regular and symmetrized Kullback-Leibler divergence for univariate Gaussian}
+This appendix derives the regular and the symmetrized \gls{KL} divergence for a pair of univariate Gaussians. Throughout this appendix, let $p(x)=\mathcal{N}(x|\mu_1,\sigma_1^2)$ and $q(x)=\mathcal{N}(x|\mu_2,\sigma_2^2)$.
+
+\section{KL divergence}
+The \gls{KL} divergence is defined in \eqref{eq: Theory: Definition of KL divergence} and can be written as
+\begin{equation}
+    D_\text{KL}(p||q) = \int \pa{\log p(x) - \log q(x)}p(x)\,\text{d}x
+\end{equation}
+where now the univariate case is considered. It follows that 
+\begin{align}
+    D_\text{KL}(p||q)
+    &= \int_{-\infty}^{\infty} \pa{-\frac{1}{2}\log 2\pi\sigma_2^2-\frac{1}{2}\pfrac{x-\mu_2}{\sigma_2}^2 + \frac{1}{2}\log 2\pi\sigma_1^2+\frac{1}{2}\pfrac{x-\mu_1}{\sigma_1}^2}p(x)\,\text{d}x\\
+    &= \int_{-\infty}^{\infty} \pa{\log\pfrac{\sigma_2}{\sigma_1} + \frac{1}{2}\pa{\pfrac{x-\mu_2}{\sigma_2}^2 - \pfrac{x-\mu_1}{\sigma_1}^2}}p(x)\,\text{d}x\\
+    &= \text{E}\bra{\log\pfrac{\sigma_2}{\sigma_1} + \frac{1}{2}\pa{\pfrac{x-\mu_2}{\sigma_2}^2 - \pfrac{x-\mu_1}{\sigma_1}^2}}_{x\sim p(x)}\\
+    &= \log\pfrac{\sigma_2}{\sigma_1} + \frac{1}{2\sigma_2^2}\text{E}\bra{\pa{x-\mu_2}^2}_{x\sim p(x)} -  \frac{1}{2\sigma_1^2}\text{E}\bra{\pa{x-\mu_1}^2}_{x\sim p(x)}\\
+    &= \log\pfrac{\sigma_2}{\sigma_1} + \frac{1}{2\sigma_2^2}\text{E}\bra{\pa{x-\mu_2}^2}_{x\sim p(x)} - \frac{1}{2}
+\end{align}
+Now, the expectation of $\pa{x-\mu_2}^2$ can be written in terms of the known quantities $\sigma_1, \mu_1$ and $\mu_2$ by force
+\begin{align}
+    \text{E}\bra{\pa{x-\mu_2}^2} &= \text{E}\bra{\pa{x-\mu_1+\mu_1-\mu_2}^2}\\
+    &= \text{E}\bra{\pa{x-\mu_1}^2+\pa{\mu_1-\mu_2}^2+2\pa{x-\mu_1}\pa{\mu_1-\mu_2}}\\
+    &= \sigma_1^2+\pa{\mu_1-\mu_2}^2.
+\end{align}
+Then
+\begin{equation}
+    D_\text{KL}(p||q) = \log\pfrac{\sigma_2}{\sigma_1} + \frac{\sigma_1^2+\pa{\mu_1-\mu_2}^2}{2\sigma_2^2} - \frac{1}{2}.
+\end{equation}
+
+
+\section{Symmetrized KL divergence}
+The symmetrized \gls{KL} divergence can be computed by use of its definition and the result for the regular \gls{KL} divergence as follows.
+\begin{align}
+    D_\text{KL}(p,q)
+    &= D_\text{KL}(p||q) + D_\text{KL}(q||p)\\
+    &= \log\pfrac{\sigma_2}{\sigma_1} + \frac{\sigma_1^2+\pa{\mu_1-\mu_2}^2}{2\sigma_2^2} - \frac{1}{2} + \log\pfrac{\sigma_1}{\sigma_2} + \frac{\sigma_2^2+\pa{\mu_2-\mu_1}^2}{2\sigma_1^2} - \frac{1}{2}\\
+    &= \log\pfrac{\sigma_2}{\sigma_1} + \log\pfrac{\sigma_1}{\sigma_2} + \frac{\sigma_1^2}{2\sigma_2^2} + \frac{\sigma_2^2}{2\sigma_1^2} + \pa{\mu_1-\mu_2}^2\pa{\frac{1}{2\sigma_1^2}+\frac{1}{2\sigma_2^2}} - 1\\
+    &= \frac{\sigma_1^2}{2\sigma_2^2} + \frac{\sigma_2^2}{2\sigma_1^2} + \pa{\mu_1-\mu_2}^2\pa{\frac{1}{2\sigma_1^2}+\frac{1}{2\sigma_2^2}} - 1\\
+    &= \pa{\sigma_1^2+\sigma_2^2}\pa{\frac{1}{2\sigma_1^2}+\frac{1}{2\sigma_2^2}} + \frac{\sigma_2^2}{2\sigma_1^2} + \pa{\mu_1-\mu_2}^2\pa{\frac{1}{2\sigma_1^2}+\frac{1}{2\sigma_2^2}}\\
+    &= \frac{1}{2}\pa{\pa{\sigma_1^2+\sigma_2^2}+\pa{\mu_1-\mu_2}^2}\pa{\frac{1}{2\sigma_1^2}+\frac{1}{2\sigma_2^2}}
+\end{align}
+ 

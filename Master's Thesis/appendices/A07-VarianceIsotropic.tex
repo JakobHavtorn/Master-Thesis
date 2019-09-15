@@ -1,0 +1,66 @@
+%!TEX root = ../Thesis.tex
+
+\chapter{Variance of isotropic Gaussian estimator}\label{app: Appendix: Variance of isotropic Gaussian estimator}
+
+The variance of the isotropic Gaussian gradient estimator is
+\begin{equation}
+    \text{Var}\left[\nabla_\x f(\x)\right]
+    \approx \text{Var}\left[\frac{1}{N\sigma}\sum_{n=1}^N f(\x+\sigma\epsilonb_n)\epsilonb_n\right]
+    = \frac{1}{N\sigma^2}\text{Var}\bra{f(\x+\sigma\epsilonb)\epsilonb} \ . 
+\end{equation}
+By Taylor expansion for small $\epsilonb$ or $\sigma$, $f(\x+\sigma\epsilonb) \approx f(\x) + \sigma\epsilonb\transpose\nabla_\x f(\x)$ and
+\begin{align}
+    \text{Var}\left[\nabla_\x f(\x)\right]
+    &\approx \frac{1}{N\sigma^2}\text{Var}\bra{f(\x)\epsilonb + \sigma\epsilonb\epsilonb\transpose \nabla_\x f(\x)} \nonumber\\
+    &= \frac{1}{N\sigma^2}\pa{f(\x)^2\I + \sigma^2(d+1)\nabla_\x f(\x)\nabla_\x f(\x)^\text{T}}\nonumber\\
+    &= \frac{1}{N\sigma^2}f(\x)^2 + \frac{d+1}{N}\nabla_\x f(\x)\nabla_\x f(\x)^\text{T}
+\end{align}
+where it has been used that 
+\begin{align}
+    \text{Var}\bra{\epsilonb\epsilonb\transpose}
+    &= \text{E}\bra{\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb} - \text{E}\bra{\epsilonb\epsilonb\transpose}\text{E}\bra{\epsilonb\epsilonb\transpose}^\text{T}\nonumber\\
+    &= \text{E}\bra{\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb} - \I
+\end{align}
+and $\text{E}\bra{\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb}$ has been determined by simulation. 
+
+To perform this simulation, $\epsilonb$ is drawn as a $d$ dimensional standard Gaussian distributed vector. In $\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb$ the dimensions are
+\begin{equation}
+    \pa{d\times1}\times\pa{1\times d}\times\pa{1\times d}\times\pa{d\times1} \ .
+\end{equation}
+First, $\epsilonb\epsilonb\transpose$ is computed to form a $d\times d$ matrix after which $\epsilonb\transpose\epsilonb$ is computed to form a scalar. In dimensions, this is 
+\begin{equation}
+    \pa{d\times d} \times 1
+\end{equation}
+which is effectively a third order tensor, as expected for the covariance of a random matrix.
+Then $\epsilonb\epsilonb\transpose$ is multiplied by that scalar to give the wanted quantity $\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb$. This is repeated a high number of times and the mean of the result is computed to give the simulated result of $\text{E}\bra{\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb}$. To uncover the dependency on $d$, this process is then repeated for $d\in\bra{1,\dots, 10}$. The result is 
+\begin{equation}
+    \text{E}\bra{\epsilonb\epsilonb\transpose\epsilonb\transpose\epsilonb} = (d+2)\I
+\end{equation}
+such that 
+\begin{equation}
+    \text{Var}\bra{\epsilonb\epsilonb\transpose} = (d+2)\I - \I = (d+1)\I
+\end{equation}
+and the covariance matrix is diagonal.
+
+% A code sample for this is seen below
+
+% \begin{lstlisting}
+% import numpy as np
+
+
+% for d in range(10):
+%     repeats = 100000
+%     quad_eps_prod = np.zeros((d, d, repeats))
+%     dot_prod = np.zeros(repeats)
+
+%     for i in range(repeats):
+%         eps = np.random.randn(d)
+%         dot_prod[i] = eps @ eps
+%         quad_eps_prod[:, :, i] = np.outer(eps, eps) * dot_prod[i]
+        
+%     dot_prod_mean = np.mean(dot_prod)
+%     quad_eps_prod_mean = np.mean(quad_eps_prod, axis=2)
+%     print(d, quad_eps_prod_mean)
+%     print(d, dot_prod_mean)
+
+% \end{lstlisting}
